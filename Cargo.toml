@@ -1,0 +1,13 @@
+[package]
+name = "FITAPP"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.32.1"
+egui = "0.32.1"
+egui_extras = {version = "*", features = ["all_loaders", "image"]}
+image = "0.25"
+serde = { version = "1.0", features = ["derive"] }
+time = {version = "0.3.40", features = ["local-offset"]}
+chrono = {version = "0.4.42", features = ["serde"]} 
