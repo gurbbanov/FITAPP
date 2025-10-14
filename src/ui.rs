@@ -1,8 +1,9 @@
-use egui::{Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind};
+use egui::TextEdit;
+use egui::{Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style};
 use eframe::{Frame};
 use egui_extras::{Size, Strip, StripBuilder};
 use time::{OffsetDateTime};
-use chrono::{Local, Datelike, Duration, NaiveDate};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate};
 
 use crate::models::{AppMedia, States, UserDataPack, WorkoutPlanned, WorkoutTemplate};
 use crate::muscles::{workout_tracker_widget_front, workout_tracker_widget_behind};
@@ -501,7 +502,7 @@ impl Gui<'_> {
                             egui::vec2(ui.available_width(), 100.0),
                         );
 
-                        Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
+                        Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
                             nw: 0,
                             ne: 0,
                             sw: 24,
@@ -529,7 +530,7 @@ impl Gui<'_> {
 
                     // let bot_rect = ui.available_rect_before_wrap();
 
-                    Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 24, elements_color, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
+                    Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 24, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
                         nw: 24,
                         ne: 24,
                         sw: 0,
@@ -554,81 +555,82 @@ impl Gui<'_> {
                             //     });
                             // });
 
-                            let weekdays = ["mo", "tu", "we", "th", "fr", "sa", "su"];
 
-                            // strip.cell(|ui| {
-                                ui.allocate_ui_at_rect(bot_rect, |ui| {
-                                    ui.vertical_centered_justified(|ui| {
-                                        ui.add_space(REMAINDER);
+                    // strip.cell(|ui| {
+                    self.draw_calendar(ui, bot_rect, now);
+                    // ui.allocate_ui_at_rect(bot_rect, |ui| {
+                    //     ui.vertical_centered_justified(|ui| {
+                    //         ui.add_space(REMAINDER);
 
-                                        // let mut available_width = ui.available_width() * 0.8;
-                                        let mut available_width = ui.available_width();
-                                        ui.set_width(available_width);
+                    //         // let mut available_width = ui.available_width() * 0.8;
+                    //         let mut available_width = ui.available_width();
+                    //         ui.set_width(available_width);
 
-                                        let rect_width = ui.available_width() / 10.0;
+                    //         let rect_width = ui.available_width() / 10.0;
 
-                                        let today = now.date_naive();
+                    //         let today = now.date_naive();
+                    //         let weekdays = ["mo", "tu", "we", "th", "fr", "sa", "su"];
 
-                                        ui.horizontal(|ui| {
-                                            ui.add_space(REMAINDER * 3.0);
-                                            if self.states.skip_days >= 0 {
-                                                ui.vertical(|ui| {
-                                                    ui.add_space(REMAINDER * 3.0);
-                                                    if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.left_arrow.clone()).frame(false)).clicked() {
-                                                        self.states.skip_days -= 7;
-                                                    };
-                                                });
-                                            } else {
-                                                ui.add_space(REMAINDER * 3.8) ;
-                                            }
+                    //         ui.horizontal(|ui| {
+                    //             ui.add_space(REMAINDER * 3.0);
+                    //             if self.states.skip_days >= 0 {
+                    //                 ui.vertical(|ui| {
+                    //                     ui.add_space(REMAINDER * 3.0);
+                    //                     if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.left_arrow.clone()).frame(false)).clicked() {
+                    //                         self.states.skip_days -= 7;
+                    //                     };
+                    //                 });
+                    //             } else {
+                    //                 ui.add_space(REMAINDER * 3.8) ;
+                    //             }
 
-                                            for i in 0..7 {
-                                                let offset = i as i64 - today.weekday().num_days_from_monday() as i64 + self.states.skip_days as i64;
-                                                let date = now.date_naive() + Duration::days(offset);
+                    //             for i in 0..7 {
+                    //                 let offset = i as i64 - today.weekday().num_days_from_monday() as i64 + self.states.skip_days as i64;
+                    //                 let date = now.date_naive() + Duration::days(offset);
 
-                                                ui.vertical(|ui| {
+                    //                 ui.vertical(|ui| {
 
-                                                    ui.add(Label::new(format!(" {}", weekdays[i])).selectable(false));
+                    //                     ui.add(Label::new(format!(" {}", weekdays[i])).selectable(false));
 
-                                                    let is_today = date == today;
-                                                    let is_selected = Some(date) == Some(self.states.selected_day);
+                    //                     let is_today = date == today;
+                    //                     let is_selected = Some(date) == Some(self.states.selected_day);
 
-                                                    if ui.add(
-                                                        Button::new(
-                                                            RichText::new(format!("{}", date.day()))
-                                                                .size(18.0)
-                                                                .color(Color32::WHITE),
-                                                        )
-                                                        .fill(
-                                                            if is_today {
-                                                                Color32::from_rgb(0, 75, 142)
-                                                            } else if is_selected {
-                                                                Color32::GRAY
-                                                            } else {
-                                                                Color32::from_rgb(96, 96, 96)
-                                                            },
-                                                        )
-                                                        .min_size(Vec2::new(rect_width, 60.0))
-                                                        .rounding(8),
-                                                    ).clicked() {
-                                                        self.states.selected_day = date;
-                                                        println!("selected: {:?}", self.states.selected_day);
-                                                    }
-                                                });
-                                            }
+                    //                     if ui.add(
+                    //                         Button::new(
+                    //                             RichText::new(format!("{}", date.day()))
+                    //                                 .size(18.0)
+                    //                                 .color(Color32::WHITE),
+                    //                         )
+                    //                         .fill(
+                    //                             if is_today {
+                    //                                 Color32::from_rgb(0, 75, 142)
+                    //                             } else if is_selected {
+                    //                                 Color32::GRAY
+                    //                             } else {
+                    //                                 Color32::from_rgb(96, 96, 96)
+                    //                             },
+                    //                         )
+                    //                         .min_size(Vec2::new(rect_width, 60.0))
+                    //                         .rounding(8),
+                    //                     ).clicked() {
+                    //                         self.states.selected_day = date;
+                    //                         println!("selected: {:?}", self.states.selected_day);
+                    //                     }
+                    //                 });
+                    //             }
 
-                                            if self.states.skip_days <= 0 {
-                                                ui.vertical(|ui| {
-                                                    ui.add_space(REMAINDER * 3.0);
-                                                    if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.right_arrow.clone()).frame(false)).clicked() {
-                                                        self.states.skip_days += 7;
-                                                    };
-                                                    ui.add_space(REMAINDER * 4.0);
-                                                });
-                                            } 
-                                        });
-                                    });
-                                });
+                    //             if self.states.skip_days <= 0 {
+                    //                 ui.vertical(|ui| {
+                    //                     ui.add_space(REMAINDER * 3.0);
+                    //                     if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.right_arrow.clone()).frame(false)).clicked() {
+                    //                         self.states.skip_days += 7;
+                    //                     };
+                    //                     ui.add_space(REMAINDER * 4.0);
+                    //                 });
+                    //             } 
+                    //         });
+                    //     });
+                    // });
                             // });
 
                             // strip.cell(|ui| {
@@ -642,8 +644,8 @@ impl Gui<'_> {
                             //     });
                             // });
                         // });
-                    });
                 });
+            });
     }
 
     pub fn calory_tracker_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, elements_color: Color32, tint_color: Color32) {
@@ -658,6 +660,8 @@ impl Gui<'_> {
             other_elements_color = Color32::from_rgb(240, 240, 240);
             text_color = Color32::BLACK;
         }
+
+        let now = chrono::Local::now();
 
         StripBuilder::new(ui)
             // .size(Size::exact(100.0))
@@ -676,7 +680,7 @@ impl Gui<'_> {
                         );
                     // let top_rect = ui.available_rect_before_wrap();
 
-                    Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
+                    Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
                         nw: 0,
                         ne: 0,
                         sw: 24,
@@ -701,7 +705,7 @@ impl Gui<'_> {
                         let calory_rect =egui::Rect::from_min_size(
                             // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
                             ctx.screen_rect().left_top() + vec2(150.0, 155.0),
-                            egui::vec2(ui.available_width() - 300.0, 100.0),
+                            egui::vec2(ui.available_width() - 300.0, 90.0),
                         );
 
                         ui.painter().rect_filled(
@@ -716,7 +720,7 @@ impl Gui<'_> {
                         );
 
                         ui.allocate_ui_at_rect(calory_rect, |ui| {
-                            ui.add_space(calory_rect.width() / 10.0);
+                            ui.add_space(calory_rect.width() / 12.0);
 
                             ui.vertical_centered(|ui| {
                                 ui.label(RichText::new(format!("{}/{}", self.datas.macro_data.calory_registered, self.datas.macro_data.calory_goal)).size(35.0).strong());
@@ -724,7 +728,7 @@ impl Gui<'_> {
                         });
                     });
 
-                    ui.add_space(50.0);
+                    ui.add_space(40.0);
 
                     let spacing = 3.0;
                     let rect_size = 10.0;
@@ -763,8 +767,8 @@ impl Gui<'_> {
                         let available_width = ui.available_width();
 
                         let carbs_rect = Rect::from_min_size(
-                            Pos2::new((available_width/ 2.0 ) - (rect_length / 2.0), ctx.screen_rect().min.y + 405.0),
-                            Vec2::new(rect_length, ctx.screen_rect().min.y  + 50.0)
+                            Pos2::new((available_width/ 2.0 ) - (rect_length / 2.0), ctx.screen_rect().min.y + 390.0),
+                            Vec2::new(rect_length, ctx.screen_rect().min.y + 50.0)
                         );
 
                         let proteins_rect = Rect::from_min_size(
@@ -858,9 +862,9 @@ impl Gui<'_> {
 
                         StripBuilder::new(ui)
                         .size(Size::exact(30.0))
-                        .size(Size::exact(10.0))
+                        .size(Size::exact(3.0))
                         .size(Size::remainder())
-                        .size(Size::exact(10.0))
+                        .size(Size::exact(20.0))
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                     ui.vertical_centered(|ui| {
@@ -887,8 +891,52 @@ impl Gui<'_> {
                                             elements_color,
                                         );
                                     });
-                                });
 
+                                    ui.allocate_ui_at_rect(history_rect.shrink2(vec2(20.0, 5.0)), |ui| {
+                                        ScrollArea::vertical()
+                                            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                                            .show(ui, |ui| {
+                                                for i in 0..10 {
+                                                    ui.vertical(|ui| {
+                                                        ui.set_height(42.0);
+                                                        ui.horizontal_centered(|ui| {
+                                                            ui.vertical(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.add(Label::new(RichText::new("Meal").size(17.0)));
+                                                                ui.add(Label::new(RichText::new("11 May 11:29").size(10.0)));
+                                                            });
+                                                            ui.add_space(140.0);
+                                                            
+                                                            ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) //                     //     egui::Color32::from_rgb(91, 0, 113),
+                                                                .fill(Color32::from_rgb(140, 0, 0)) 
+                                                                .min_size(Vec2::new(65.0, 25.0))
+                                                                .rounding(9));
+
+                                                            ui.add_space(5.0);
+                                                            
+                                                            ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
+                                                            .fill(Color32::from_rgb(0, 79, 148)) 
+                                                            .min_size(Vec2::new(50.0, 25.0))
+                                                            .rounding(9));
+                                                        
+                                                            ui.add_space(20.0);
+
+                                                            ui.vertical(|ui| {
+                                                                ui.add_space(6.0);
+                                                                ui.add(Label::new(RichText::new("+197 cals").size(16.0).color(Color32::from_rgb(21, 141, 0))));
+                                                                ui.horizontal(|ui| {
+                                                                    ui.add(Label::new(RichText::new("38p").size(10.0).color(Color32::BLUE)));
+                                                                    ui.add(Label::new(RichText::new("67c").size(10.0).color(Color32::ORANGE)));
+                                                                    ui.add(Label::new(RichText::new("26f").size(10.0).color(Color32::RED)));
+                                                                });
+                                                            });
+                                                        });
+                                                        ui.separator();
+                                                    });
+                                                }
+                                            });
+                                    });
+                                });
                                 strip.empty();
                             });
 
@@ -929,43 +977,67 @@ impl Gui<'_> {
                     let mut target_height = 150.0;
 
                     if self.states.calory_add_clicked {
-                        target_height = 300.0;
+                        target_height = 330.0;
                     };
 
                     self.states.strip_size = ui.ctx().animate_value_with_time(
                         ui.id().with("history_height"),
                         target_height,
-                        1.0, 
+                        0.6, 
                     );
 
 
-                    Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
+                    Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
                         nw: 110,
                         ne: 110,
                         sw: 0,
                         se: 0,
                     });
 
+
                     ui.vertical_centered(|ui| {
                         ui.allocate_ui_at_rect(bot_rect, |ui| {
                             if !self.states.calory_add_clicked {
-                                ui.add_space(30.0);
-                                if ui.add(
-                                    Button::new(RichText::new("add calories").size(18.0).strong().color(Color32::WHITE))
-                                        //     egui::Color32::from_rgb(91, 0, 113),
-                                        .fill(Color32::from_rgb(21, 141, 0)) 
-                                        .min_size(Vec2::new(120.0, 40.0))
-                                        .rounding(12),
-                                ).clicked() {
-                                    self.states.calory_add_clicked = true;
-                                };
+                                let rect = egui::Rect::from_min_size(
+                                    egui::pos2(bot_rect.center().x - 35.0, bot_rect.left_top().y - 20.0),
+                                    egui::vec2(70.0, 25.0),
+                                );
+
+                                ui.painter().rect_filled(
+                                    rect,
+                                    5.0,
+                                    Color32::BLACK,
+                                );
+
+                                ui.allocate_ui_at_rect(rect, |ui| {
+                                    if ui.add(
+                                        Button::image_and_text(self.medias.plus.clone(), RichText::new("switch").size(13.0).strong().color(Color32::WHITE))
+                                            .min_size(Vec2::new(70.0, 25.0))
+                                            .rounding(5.0),
+                                    ).clicked() {
+                                        self.states.calendar_mode_calory_ui = !self.states.calendar_mode_calory_ui;
+                                    };
+                                });
+                                if self.states.calendar_mode_calory_ui {
+                                    self.draw_calendar(ui, bot_rect, now);
+                                } else {
+                                    ui.add_space(20.0);
+                                    if ui.add(
+                                        Button::new(RichText::new("add macros").size(18.0).strong().color(Color32::WHITE))
+                                            //     egui::Color32::from_rgb(91, 0, 113),
+                                            .fill(Color32::from_rgb(21, 141, 0)) 
+                                            .min_size(Vec2::new(120.0, 40.0))
+                                            .rounding(12),
+                                    ).clicked() {
+                                        self.states.calory_add_clicked = !self.states.calory_add_clicked;
+                                    };
+                                }
                             } else {
-                                // ui.add_space(7.0);
                                 StripBuilder::new(ui)
                                     .size(Size::exact(110.0))
-                                    .size(Size::exact(10.0))
+                                    .size(Size::exact(25.0))
                                     .size(Size::remainder())
-                                    .size(Size::exact(75.0))
+                                    .size(Size::exact(85.0))
                                     .vertical(|mut strip| {
                                         strip.cell(|ui| {
                                             StripBuilder::new(ui)
@@ -978,7 +1050,7 @@ impl Gui<'_> {
                                                         ui.vertical_centered(|ui| {
                                                             if ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.cancel_button_d.clone()} else {self.medias.cancel_button_l.clone()})
                                                                 .frame(false)).clicked() {
-                                                                    self.states.calory_add_clicked = false;
+                                                                    self.states.calory_add_clicked = !self.states.calory_add_clicked;
                                                                 };
                                                         });
                                                     });
@@ -991,28 +1063,17 @@ impl Gui<'_> {
                                                             ui.add(Label::new(RichText::new("add calories:").size(18.0).color(text_color).strong()).selectable(false));
                                                             ui.add_space(REMAINDER);
                                                             let calory_rect = ui.available_rect_before_wrap();
-                                                            ui.allocate_ui_at_rect(calory_rect, |ui| {
-                                                            // let frame = egui::Frame::none()
-                                                            //     .fill(other_elements_color)
-                                                            //     .rounding(25.0)
-                                                            //     .stroke(Stroke::new(2.0, Color32::from_rgb(158, 91, 50)));
+                                                            ui.painter().rect_filled(calory_rect, 25.0, other_elements_color);
+                                                            ui.vertical_centered(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
 
-                                                            // frame.show(ui, |ui| {
-        //                                                             let frame = egui::Frame::none()
-        //     .fill(other_elements_color)
-        //     .rounding(25.0)
-        //     .stroke(Stroke::new(2.0, Color32::from_rgb(37, 99, 153)));
-
-        // frame.show(ui, |ui| {
-        ui.centered_and_justified(|ui| {
-
-            ui.add_sized([calory_rect.width() - 20.0, calory_rect.height() - 30.0], egui::TextEdit::singleline(&mut self.states.calory_add_value));
-        });
-        // });
-                                                            // });
-                                                        });
-
-                                                            // ui.painter().rect_filled(calory_rect, 25.0, other_elements_color);
+                                                                ui.add_sized(
+                                                                    [calory_rect.width() - 20.0, calory_rect.height() - 30.0],
+                                                                    egui::TextEdit::singleline(&mut self.states.calory_add_value)
+                                                                        .font(egui::FontId::new(40.0, egui::FontFamily::Proportional)).background_color(other_elements_color).frame(false).char_limit(4),
+                                                                );
+                                                            });
                                                             ui.painter().rect_stroke(calory_rect, 25.0, Stroke::new(2.0, Color32::BLACK), StrokeKind::Outside);
                                                         });
 
@@ -1021,8 +1082,16 @@ impl Gui<'_> {
                                                     strip.cell(|ui| {
                                                         ui.add_space(7.0);
                                                         ui.vertical_centered(|ui| {
-                                                            ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.save_button_d.clone()} else {self.medias.save_button_l.clone()})
-                                                                .frame(false));
+                                                            if ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.save_button_d.clone()} else {self.medias.save_button_l.clone()})
+                                                                .frame(false)).clicked() {
+                                                                    self.datas.macro_data.update(
+                                                                        &self.states.calory_add_value,
+                                                                        &self.states.protein_add_value, 
+                                                                        &self.states.carb_add_value, 
+                                                                        &self.states.fat_add_value);
+                                                                    self.states.reset_macros();
+                                                                    self.states.calory_add_clicked = !self.states.calory_add_clicked;
+                                                                };
                                                         });
                                                     });
                                                 });
@@ -1049,6 +1118,16 @@ impl Gui<'_> {
                                                             let proteins_rect = ui.available_rect_before_wrap();
 
                                                             ui.painter().rect_filled(proteins_rect, 25.0, other_elements_color); 
+                                                            ui.vertical_centered(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+
+                                                                ui.add_sized(
+                                                                    [proteins_rect.width() - 20.0, proteins_rect.height()],
+                                                                    egui::TextEdit::singleline(&mut self.states.protein_add_value)
+                                                                        .font(egui::FontId::new(40.0, egui::FontFamily::Proportional)).background_color(other_elements_color).frame(false).char_limit(4),
+                                                                );
+                                                            });
                                                             ui.painter().rect_stroke(proteins_rect, 25.0, Stroke::new(2.0, Color32::from_rgb(37, 99, 153)), StrokeKind::Outside);
                                                         });
 
@@ -1063,6 +1142,16 @@ impl Gui<'_> {
                                                             let carbs_rect = ui.available_rect_before_wrap();
 
                                                             ui.painter().rect_filled(carbs_rect, 25.0, other_elements_color);
+                                                            ui.vertical_centered(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+
+                                                                ui.add_sized(
+                                                                    [carbs_rect.width() - 20.0, carbs_rect.height()],
+                                                                    egui::TextEdit::singleline(&mut self.states.carb_add_value)
+                                                                        .font(egui::FontId::new(40.0, egui::FontFamily::Proportional)).background_color(other_elements_color).frame(false).char_limit(4),
+                                                                );
+                                                            });
                                                             ui.painter().rect_stroke(carbs_rect, 25.0, Stroke::new(2.0, Color32::from_rgb(158, 91, 50)), StrokeKind::Outside);
                                                         });
                                                     });
@@ -1076,6 +1165,16 @@ impl Gui<'_> {
                                                             let fats_rect = ui.available_rect_before_wrap();
 
                                                             ui.painter().rect_filled(fats_rect, 25.0, other_elements_color);
+                                                            ui.vertical_centered(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+
+                                                                ui.add_sized(
+                                                                    [fats_rect.width() - 20.0, fats_rect.height()],
+                                                                    egui::TextEdit::singleline(&mut self.states.fat_add_value)
+                                                                        .font(egui::FontId::new(40.0, egui::FontFamily::Proportional)).background_color(other_elements_color).frame(false).char_limit(4),
+                                                                );
+                                                            });
                                                             ui.painter().rect_stroke(fats_rect, 25.0, Stroke::new(2.0, Color32::from_rgb(161, 59, 73)), StrokeKind::Outside);
                                                         });
                                                     });
@@ -1199,11 +1298,12 @@ impl Gui<'_> {
         ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
 
         let mut green_rects = {
-            if self.datas.macro_data.calory_goal > self.datas.macro_data.calory_registered{
+            if self.datas.macro_data.calory_registered == 0 {
+                0
+            } else if self.datas.macro_data.calory_goal > self.datas.macro_data.calory_registered{
                 (((rows * cols) as f32 / 100.0) * calory_percent as f32).round() as u32
             } else {
-                0
-            //    rows * cols 
+               rows * cols 
             }
         };
 
@@ -1286,10 +1386,11 @@ impl Gui<'_> {
 
         let calory_percent = ((registered as f32 / goal as f32) * 100.0) as u32;
 
-        let mut remaining = if goal > registered {
+        let mut remaining = if registered == 0 {0} 
+        else if goal > registered {
             (((ROWS * COLUMNS) as f32 / 100.0) * calory_percent as f32).round() as u32
         } else {
-            0
+            ROWS * COLUMNS
         };
 
         ui.vertical(|ui| {
@@ -1382,7 +1483,6 @@ impl Gui<'_> {
                     
                         ui.add(
                             Button::new(RichText::new("start").size(22.0).strong().color(Color32::WHITE))
-                                //     egui::Color32::from_rgb(91, 0, 113),
                                 .fill(Color32::from_rgb(21, 141, 0)) 
                                 .min_size(Vec2::new(side_rect.width() / 4.0, 40.0))
                                 .rounding(10),
@@ -1427,14 +1527,13 @@ impl Gui<'_> {
                         });
                     });
                 });
-                // }
             });
     }
 
-    fn draw_rect_with_black_shadow(painter: &egui::Painter, rect: egui::Rect, rounding: u8, fill: Color32, offset_y: f32, layer: [(f32, u8); 3], corners: Rounding) {
+    fn draw_rect_with_black_shadow(painter: &egui::Painter, rect: egui::Rect, rounding: u8, fill: Color32, offset_x: f32, offset_y: f32, layer: [(f32, u8); 3], corners: Rounding) {
         let shadow_color = |alpha: u8| Color32::from_rgba_unmultiplied(0, 0, 0, alpha);
 
-        let shadow_offset = Vec2::new(0.0, offset_y);
+        let shadow_offset = Vec2::new(offset_x, offset_y);
 
         for (inflate_by, alpha) in layer {
             let shadow_rect = rect
@@ -1445,5 +1544,81 @@ impl Gui<'_> {
 
         painter.rect_filled(rect, corners
         ,fill);
+    }
+
+    fn draw_calendar(&mut self, ui: &mut Ui, rect: Rect, now: DateTime<Local>) {
+        ui.allocate_ui_at_rect(rect, |ui| {
+            ui.vertical_centered_justified(|ui| {
+                ui.add_space(REMAINDER);
+
+                let mut available_width = ui.available_width();
+                ui.set_width(available_width);
+
+                let rect_width = ui.available_width() / 10.0;
+
+                let today = now.date_naive();
+                let weekdays = ["mo", "tu", "we", "th", "fr", "sa", "su"];
+
+                ui.horizontal(|ui| {
+                    ui.add_space(REMAINDER * 3.0);
+                    if self.states.skip_days >= 0 {
+                        ui.vertical(|ui| {
+                            ui.add_space(REMAINDER * 3.0);
+                            if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.left_arrow.clone()).frame(false)).clicked() {
+                                self.states.skip_days -= 7;
+                            };
+                        });
+                    } else {
+                        ui.add_space(REMAINDER * 3.8) ;
+                    }
+
+                    for i in 0..7 {
+                        let offset = i as i64 - today.weekday().num_days_from_monday() as i64 + self.states.skip_days as i64;
+                        let date = now.date_naive() + Duration::days(offset);
+
+                        ui.vertical(|ui| {
+
+                            ui.add(Label::new(format!(" {}", weekdays[i])).selectable(false));
+
+                            let is_today = date == today;
+                            let is_selected = Some(date) == Some(self.states.selected_day);
+
+                            if ui.add(
+                                Button::new(
+                                    RichText::new(format!("{}", date.day()))
+                                        .size(18.0)
+                                        .color(Color32::WHITE),
+                                )
+                                .fill(
+                                    if is_today {
+                                        Color32::from_rgb(0, 75, 142)
+                                    } else if is_selected {
+                                        Color32::GRAY
+                                    } else {
+                                        Color32::from_rgb(96, 96, 96)
+                                    },
+                                )
+                                .min_size(Vec2::new(rect_width, 60.0))
+                                .rounding(8),
+                            ).clicked() {
+                                self.states.selected_day = date;
+                                println!("selected: {:?}", self.states.selected_day);
+                            }
+                        });
+                    }
+
+                    if self.states.skip_days <= 0 {
+                        ui.vertical(|ui| {
+                            ui.add_space(REMAINDER * 3.0);
+                            if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.right_arrow.clone()).frame(false)).clicked() {
+                                self.states.skip_days += 7;
+                            };
+                            ui.add_space(REMAINDER * 4.0);
+                        });
+                    } 
+                });
+            });
+        });
+
     }
 }

@@ -1,5 +1,6 @@
 use egui::Button;
 use egui::{epaint::Rounding, vec2, Color32, Context, ImageButton, LayerId, SelectableLabel};
+use egui::{TextStyle, FontFamily, FontId};
 use crate::ui::Gui;
 use crate::models::AppMedia;
 
@@ -10,6 +11,16 @@ pub struct AppRuntime<'a> {
 
 impl AppRuntime<'_> {
     pub fn new(ctx: &Context) -> Self {
+                let mut style = (*ctx.style()).clone();
+
+        style.text_styles.insert(
+            TextStyle::Name("SuperHeading".into()),
+            FontId::new(40.0, FontFamily::Proportional),
+        );
+        
+        ctx.set_style(style);
+
+
         Self {
             ui: Gui::init(ctx),
             // medias: AppMedia::load_media(ctx)

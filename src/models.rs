@@ -313,20 +313,29 @@ impl MacroData {
         }
     }
 
-    pub fn update(&mut self, calory: Option<u32>, protein: Option<u32>, carb: Option<u32>, fat: Option<u32>) {
-        if let Some(calory) = calory {
-            self.calory_goal = calory;
-        }
-        if let Some(protein) = protein {
-            self.protein_goal = protein;
-        }
-        if let Some(carb) = carb {
-            self.carb_goal = carb;
-        }
-        if let Some(fat) = fat {
-            self.fat_goal = fat;
-        }
+    // pub fn update(&mut self, calory: &Option<String>, protein: &Option<String>, carb: &Option<String>, fat: &Option<String>) {
+    //     if let Some(calory) = calory {
+    //         self.calory_registered += calory.parse::<u32>().unwrap();
+    //     }
+    //     if let Some(protein) = protein {
+    //         // self.protein_registered += protein.parse::<u32>();
+    //     }
+    //     if let Some(carb) = carb {
+    //         // self.carb_registered += carb.parse::<u32>();
+    //     }
+    //     if let Some(fat) = fat {
+    //         // self.fat_registered += fat.parse::<u32>();
+    //     }
+    // }
+
+    pub fn update(&mut self, calory: &str, protein: &str, carb: &str, fat: &str) {
+        self.calory_registered += calory.trim().parse::<u32>().unwrap_or(0);
+        self.protein_registered += protein.trim().parse::<u32>().unwrap_or(0);
+        self.carb_registered += carb.trim().parse::<u32>().unwrap_or(0);
+        self.fat_registered += fat.trim().parse::<u32>().unwrap_or(0);
     }
+
+
 }
 
 struct Meal {
@@ -384,12 +393,15 @@ pub struct States {
     pub selected_tab: usize,
     pub skip_days: i16,
     pub selected_day: NaiveDate,
+    // pub selected_day_workouts_ui: NaiveDate,
+    // pub selected_day_calory_ui: NaiveDate,
     pub strip_size: f32,
+    pub calendar_mode_calory_ui: bool,
     pub calory_add_clicked: bool,
     pub calory_add_value: String,
-    pub protein_add_value: u32,
-    pub carb_add_value: u32,
-    pub fat_add_value: u32,
+    pub protein_add_value: String,
+    pub carb_add_value: String,
+    pub fat_add_value: String,
     // pub calories:u32,
     // pub proteins: u32,
     // pub carbs: u32,
@@ -404,16 +416,26 @@ impl States {
             skip_days: 0,
             // selected_day: OffsetDateTime::now_local().unwrap(),
             selected_day: Local::now().date_naive(),
+            // selected_day_workouts_ui: Local::now().date_naive(),
+            // selected_day_calory_ui: Local::now().date_naive(),
             strip_size: 150.0,
+            calendar_mode_calory_ui: true,
             calory_add_clicked: false,
-            calory_add_value: String::from("0"),
-            protein_add_value: 0,
-            carb_add_value: 0,
-            fat_add_value: 0,
+            calory_add_value: String::from("0"), 
+            protein_add_value: String::from("0"),
+            carb_add_value: String::from("0"),
+            fat_add_value: String::from("0"),
             // calories: 0,
             // proteins: 0,
             // carbs: 0,
             // fats: 0,
         }
+    }
+
+    pub fn reset_macros(&mut self) {
+        self.calory_add_value = String::from("0");
+        self.protein_add_value = String::from("0");
+        self.carb_add_value = String::from("0");
+        self.fat_add_value = String::from("0");
     }
 }
