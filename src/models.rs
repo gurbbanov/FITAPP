@@ -25,6 +25,7 @@ pub struct AppMedia<'a> {
     pub cancel_button_l: ImageSource<'a>,
     pub save_button_d: ImageSource<'a>,
     pub cancel_button_d: ImageSource<'a>,
+    pub switch: ImageSource<'a>,
     // pub ambient_test: TextureHandle,
 }
 
@@ -50,6 +51,7 @@ impl AppMedia<'_> {
             cancel_button_l: include_image!("../medias/cancel_button_l.png"),
             save_button_d: include_image!("../medias/save_button_d.png"),
             cancel_button_d: include_image!("../medias/cancel_button_d.png"),
+            switch: include_image!("../medias/switch.png"),
             // ambient_test: load_png(ctx, include_bytes!("../test.png")).expect("не удалось загрузить ambient_test"),
         }
     }

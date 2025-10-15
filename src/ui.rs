@@ -1,4 +1,4 @@
-use egui::TextEdit;
+use egui::{CornerRadius, TextEdit};
 use egui::{Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style};
 use eframe::{Frame};
 use egui_extras::{Size, Strip, StripBuilder};
@@ -648,7 +648,7 @@ impl Gui<'_> {
             });
     }
 
-    pub fn calory_tracker_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, elements_color: Color32, tint_color: Color32) {
+    pub fn calory_tracker_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, elements_color: Color32, tint_color: Color32) {
         let is_dark = ctx.style().visuals.dark_mode;
         let mut other_elements_color;
         let mut text_color;
@@ -665,39 +665,17 @@ impl Gui<'_> {
 
         StripBuilder::new(ui)
             // .size(Size::exact(100.0))
-            // .size(Size::relative(0.8))
-            // .size(Size::relative(0.73))
             .size(Size::remainder())
             .size(Size::exact(self.states.strip_size))
             .vertical(|mut strip|{
+
+                // let now = chrono::Local::now();
                 strip.cell(|ui| {
                     ScrollArea::vertical()
                         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
                         .show(ui, |ui| {
-                        let top_rect = egui::Rect::from_min_size(
-                            ctx.screen_rect().left_top(),
-                            egui::vec2(ui.available_width(), 100.0),
-                        );
-                    // let top_rect = ui.available_rect_before_wrap();
 
-                    Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
-                        nw: 0,
-                        ne: 0,
-                        sw: 24,
-                        se: 24,
-                    });
-
-                    ui.allocate_ui_at_rect(top_rect, |ui| {
-                        ui.vertical_centered(|ui| {
-                            ui.add_space(20.0);
-                            ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%B"), self.states.selected_day.format("%d"))).size(25.0).strong()).selectable(false));
-                            ui.add(Label::new(RichText::new(format!("{}", self.states.selected_day.format("%A"))).size(15.0).strong()).selectable(false));
-                        });
-                    });
-                // });
-
-                // strip.cell(|ui| {
-                    ui.add_space(45.0);
+                    ui.add_space(115.0);
 
                     ui.vertical_centered(|ui| {
                         ui.add(Label::new(RichText::new("CALORIES").size(25.0).strong()).selectable(false));
@@ -856,124 +834,122 @@ impl Gui<'_> {
                                 });
                             });
                         });
-                                    // ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
-                                    //     ui.add(Image::new(self.medias.ambient.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
-                                    // });
 
                         StripBuilder::new(ui)
-                        .size(Size::exact(30.0))
-                        .size(Size::exact(3.0))
-                        .size(Size::remainder())
-                        .size(Size::exact(20.0))
-                        .vertical(|mut strip| {
-                            strip.cell(|ui| {
-                                    ui.vertical_centered(|ui| {
-                                        ui.add(Label::new(RichText::new("HISTORY").size(25.0).strong()).selectable(false));
-                                    });
-                                });
-                                
-                                strip.empty();
-
+                            .size(Size::exact(30.0))
+                            .size(Size::exact(3.0))
+                            .size(Size::remainder())
+                            .size(Size::exact(20.0))
+                            .vertical(|mut strip| {
                                 strip.cell(|ui| {
-                                    ui.set_max_width(480.0);
-
-                                    let history_rect = ui.available_rect_before_wrap();
-
                                     ui.vertical_centered(|ui| {
-                                        ui.painter().rect_filled(
-                                            history_rect,
-                                            egui::epaint::Rounding {
-                                                nw: 28,
-                                                ne: 28,
-                                                sw: 28,
-                                                se: 28,
-                                            },
-                                            elements_color,
-                                        );
+                                            ui.add(Label::new(RichText::new("HISTORY").size(25.0).strong()).selectable(false));
+                                        });
                                     });
+                                    
+                                    strip.empty();
 
-                                    ui.allocate_ui_at_rect(history_rect.shrink2(vec2(20.0, 5.0)), |ui| {
-                                        ScrollArea::vertical()
-                                            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
-                                            .show(ui, |ui| {
-                                                for i in 0..10 {
-                                                    ui.vertical(|ui| {
-                                                        ui.set_height(42.0);
-                                                        ui.horizontal_centered(|ui| {
-                                                            ui.vertical(|ui| {
+                                    strip.cell(|ui| {
+                                        ui.set_max_width(480.0);
+
+                                        let history_rect = ui.available_rect_before_wrap();
+
+                                        ui.vertical_centered(|ui| {
+                                            ui.painter().rect_filled(
+                                                history_rect,
+                                                egui::epaint::Rounding {
+                                                    nw: 28,
+                                                    ne: 28,
+                                                    sw: 28,
+                                                    se: 28,
+                                                },
+                                                elements_color,
+                                            );
+                                        });
+
+                                        ui.allocate_ui_at_rect(history_rect.shrink2(vec2(20.0, 5.0)), |ui| {
+                                            ScrollArea::vertical()
+                                                .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                                                .show(ui, |ui| {
+                                                    for i in 0..10 {
+                                                        ui.vertical(|ui| {
+                                                            ui.set_height(42.0);
+                                                            ui.horizontal_centered(|ui| {
+                                                                ui.vertical(|ui| {
+                                                                    ui.add_space(5.0);
+                                                                    ui.add(Label::new(RichText::new("Meal").size(17.0)));
+                                                                    ui.add(Label::new(RichText::new("11 May 11:29").size(10.0)));
+                                                                });
+                                                                ui.add_space(140.0);
+                                                                
+                                                                ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
+                                                                    .fill(Color32::from_rgb(140, 0, 0)) 
+                                                                    .min_size(Vec2::new(65.0, 25.0))
+                                                                    .rounding(9));
+
                                                                 ui.add_space(5.0);
-                                                                ui.add(Label::new(RichText::new("Meal").size(17.0)));
-                                                                ui.add(Label::new(RichText::new("11 May 11:29").size(10.0)));
-                                                            });
-                                                            ui.add_space(140.0);
-                                                            
-                                                            ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) //                     //     egui::Color32::from_rgb(91, 0, 113),
-                                                                .fill(Color32::from_rgb(140, 0, 0)) 
-                                                                .min_size(Vec2::new(65.0, 25.0))
+                                                                
+                                                                ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
+                                                                .fill(Color32::from_rgb(0, 79, 148)) 
+                                                                .min_size(Vec2::new(50.0, 25.0))
                                                                 .rounding(9));
-
-                                                            ui.add_space(5.0);
                                                             
-                                                            ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
-                                                            .fill(Color32::from_rgb(0, 79, 148)) 
-                                                            .min_size(Vec2::new(50.0, 25.0))
-                                                            .rounding(9));
-                                                        
-                                                            ui.add_space(20.0);
+                                                                ui.add_space(20.0);
 
-                                                            ui.vertical(|ui| {
-                                                                ui.add_space(6.0);
-                                                                ui.add(Label::new(RichText::new("+197 cals").size(16.0).color(Color32::from_rgb(21, 141, 0))));
-                                                                ui.horizontal(|ui| {
-                                                                    ui.add(Label::new(RichText::new("38p").size(10.0).color(Color32::BLUE)));
-                                                                    ui.add(Label::new(RichText::new("67c").size(10.0).color(Color32::ORANGE)));
-                                                                    ui.add(Label::new(RichText::new("26f").size(10.0).color(Color32::RED)));
+                                                                ui.vertical(|ui| {
+                                                                    ui.add_space(6.0);
+                                                                    ui.add(Label::new(RichText::new("+197 cals").size(16.0).color(Color32::from_rgb(21, 141, 0))));
+                                                                    ui.horizontal(|ui| {
+                                                                        ui.add(Label::new(RichText::new("38p").size(10.0).color(Color32::BLUE)));
+                                                                        ui.add(Label::new(RichText::new("67c").size(10.0).color(Color32::ORANGE)));
+                                                                        ui.add(Label::new(RichText::new("26f").size(10.0).color(Color32::RED)));
+                                                                    });
                                                                 });
                                                             });
+                                                            ui.separator();
                                                         });
-                                                        ui.separator();
-                                                    });
-                                                }
-                                            });
+                                                    }
+                                                });
+                                        });
                                     });
+                                    strip.empty();
                                 });
-                                strip.empty();
                             });
+                        });
 
+                        let top_rect = egui::Rect::from_min_size(
+                            ctx.screen_rect().left_top(),
+                            egui::vec2(ui.available_width(), 100.0),
+                        );
 
-                        // let bot_rect = ui.available_rect_before_wrap();
-                        // let bot_rect = egui::Rect::from_min_size(
-                        //     ctx.screen_rect().left_bottom() - vec2(0.0, 130.0),
-                        //     ctx.screen_rect().right_bottom().to_vec2(),
-                        // );
+                        Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
+                            nw: 0,
+                            ne: 0,
+                            sw: 24,
+                            se: 24,
+                        });
 
-                        // Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
-                        //     nw: 110,
-                        //     ne: 110,
-                        //     sw: 0,
-                        //     se: 0,
-                        // });
+                        ui.allocate_ui_at_rect(top_rect, |ui| {
+                            ui.vertical_centered(|ui| {
+                                ui.add_space(20.0);
+                                ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%B"), self.states.selected_day.format("%d"))).size(25.0).strong()).selectable(false));
+                                ui.add(Label::new(RichText::new(format!("{}", self.states.selected_day.format("%A"))).size(15.0).strong()).selectable(false));
+                            });
+                        });
 
-                        // ui.vertical_centered(|ui| {
-                        //     ui.allocate_ui_at_rect(bot_rect, |ui| {
-                        //         ui.add_space(30.0);
-                        //         if ui.add(
-                        //             Button::new(RichText::new("add calories").size(18.0).strong().color(Color32::WHITE))
-                        //                 //     egui::Color32::from_rgb(91, 0, 113),
-                        //                 .fill(Color32::from_rgb(21, 141, 0)) 
-                        //                 .min_size(Vec2::new(120.0, 40.0))
-                        //                 .rounding(12),
-                        //         ).clicked() {
-                        //             self.states.strip_size = 400.0;
-                        //         };
-                        //     });
-                        // });
-                    });
+                        ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                            ui.add(Image::new(self.medias.ambient.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                        });
                 });
-            });
 
                 strip.cell(|ui| {
-                    let bot_rect = ui.available_rect_before_wrap();
+                    let bot_rect = egui::Rect::from_min_max(
+                        // ctx.screen_rect().left_bottom() - vec2(0.0, 150.0),
+                        // ctx.screen_rect().right_bottom().to_vec2(),
+                        ctx.screen_rect().left_bottom() - vec2(0.0, self.states.strip_size),
+                        ctx.screen_rect().right_bottom(),
+                    );
+
                     let mut target_height = 150.0;
 
                     if self.states.calory_add_clicked {
@@ -1003,15 +979,17 @@ impl Gui<'_> {
                                     egui::vec2(70.0, 25.0),
                                 );
 
-                                ui.painter().rect_filled(
-                                    rect,
-                                    5.0,
-                                    Color32::BLACK,
-                                );
+                                Self::draw_rect_with_black_shadow(ui.painter(), rect, 5, other_elements_color, 0.0, 1.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
+                                    nw: 5,
+                                    ne: 5,
+                                    sw: 5,
+                                    se: 5,
+                                });
 
                                 ui.allocate_ui_at_rect(rect, |ui| {
                                     if ui.add(
-                                        Button::image_and_text(self.medias.plus.clone(), RichText::new("switch").size(13.0).strong().color(Color32::WHITE))
+                                        Button::image_and_text(self.medias.switch.clone(), RichText::new("switch").size(13.0).strong().color(text_color))
+                                            .fill(elements_color)
                                             .min_size(Vec2::new(70.0, 25.0))
                                             .rounding(5.0),
                                     ).clicked() {
@@ -1188,78 +1166,9 @@ impl Gui<'_> {
                     });
                 });
             });
-
-        // StripBuilder::new(ui)
-        //     .size(Size::relative(0.1))
-        //     .size(Size::relative(0.8))
-        //     .size(Size::relative(0.1))
-        //     .horizontal(|mut strip|{
-
-        //         strip.empty();
-
-        //         strip.cell(|ui| {
-        //             // ui.allocate_ui_at_rect(ui.available_rect(), |ui| {
-        //             //     ui.set_min_size(vec2(500.0, 600.0));
-
-        //             ScrollArea::vertical()
-        //                 .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
-        //                 .show(ui, |ui| {
-        //                     ui.vertical_centered(|ui| {
-        //                         ui.group(|ui| {
-        //                             ui.set_min_size(vec2(450.0, 600.0));
-        //                                 ui.set_min_size(vec2(0.0, 150.0));
-        //                                 let top_left = ui.min_rect().min;
-
-        //                                 let my_rect = Rect::from_min_size(top_left + vec2(0.0, 120.0), vec2(450.0,600.0));
-
-        //                                 ui.painter().rect_filled(my_rect, 5.0, Color32::from_rgb(60, 120, 200));
-
-        //                         });
-
-        //                         ui.add_space(20.0);
-
-        //                         ui.group(|ui| {
-        //                             ui.set_min_height(300.0);
-        //                             ui.label("Нижний блок");
-        //                         });
-
-        //                         ui.add_space(100.0);
-        //                     })
-        //                 });
-        //             });
-
-        //         strip.empty();
-        //     });
     }
 
     pub fn water_tracker_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, elements_color: Color32, tint_color: Color32) {
-        // let ctx = ui.ctx();
-        // let rect = ui.max_rect();
-
-        // let layer1 = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("layer1")));
-        // layer1.rect_filled(rect.shrink(20.0), 10.0, Color32::LIGHT_BLUE);
-
-
-        // // let layer2 = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("layer2")));
-
-        // // layer2.with_layout(egui::Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
-        // // layer2.add(Image::new(self.medias.ambient.clone()));
-        // let layer2 = ctx.layer_painter(egui::LayerId::new(
-        //     egui::Order::Foreground,
-        //     egui::Id::new("layer2"),
-        // ));
-
-        // let rect = ui.max_rect();
-
-        // layer2.image(
-        //     self.medias.ambient_test.id(),
-        //     rect,
-        //     Rect::from_min_max(egui::pos2(0.0, 0.0),
-        //     egui::pos2(1.0, 1.0)),
-        //     egui::Color32::WHITE, // tint
-        // );
-
-        // // });
     }
             
     pub fn navigation_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
