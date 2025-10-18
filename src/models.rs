@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, option};
 use egui::{Context, TextureHandle, ImageSource, include_image};
 use serde::{Deserialize, Serialize};
 use crate::tools::{load_png, weekday_iso};
 use time::OffsetDateTime;
-use chrono::{Local, NaiveDate};
+use chrono::{Local, NaiveDate, NaiveTime};
 
 #[derive(Clone)]
 pub struct AppMedia<'a> {
@@ -288,6 +288,8 @@ impl WorkoutData {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct MacroData {
+    pub meal_history: HashMap<NaiveDate, Vec<Eat>>,
+
     pub calory_goal: u32,
     pub protein_goal: u32,
     pub carb_goal: u32,
@@ -303,6 +305,7 @@ pub struct MacroData {
 impl MacroData {
     pub fn default() -> Self {
         Self {
+            meal_history: HashMap::from([(Local::now().date_naive(), vec![Eat::new(chrono::Local::now().time(), Meal::new(100, 100, 100, 100)), Eat::new(chrono::Local::now().time(), Meal::new(10, 10, 10, 10))])]),
             calory_goal: 1000,
             protein_goal: 200,
             carb_goal: 90,
@@ -337,39 +340,48 @@ impl MacroData {
         self.fat_registered += fat.trim().parse::<u32>().unwrap_or(0);
     }
 
-
+    pub fn add_meal(&mut self, selected_date: NaiveDate, calory: &str, protein: &str, carb: &str, fat: &str) {
+        self.meal_history.entry(selected_date).or_default().insert(0, Eat::new(chrono::Local::now().time(), Meal::new(
+            calory.trim().parse::<u32>().unwrap_or(0),
+            protein.trim().parse::<u32>().unwrap_or(0),
+            carb.trim().parse::<u32>().unwrap_or(0),
+            fat.trim().parse::<u32>().unwrap_or(0),
+        )));
+    }
 }
 
-struct Meal {
-    name: String,
-    calory: u32,
-    protein: u32,
-    carb: u32,
-    fat: u32,
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub struct Eat {
+    pub date: NaiveTime,
+    pub meal: Meal,
 }
 
-impl Meal {
-    pub fn new(name: String, calory: u32, protein: u32, carb: u32, fat: u32) -> Self {
+impl Eat {
+    pub fn new(date: NaiveTime, meal: Meal) -> Self {
         Self {
-            name,
-            calory,
-            protein,
-            carb,
-            fat,
+            date,
+            meal,
         }
     }
 }
 
-struct Eat {
-    date: NaiveDate,
-    meal: Meal,
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub struct Meal {
+    pub name: String,
+    pub calory: u32,
+    pub protein: u32,
+    pub carb: u32,
+    pub fat: u32,
 }
 
-impl Eat {
-    pub fn new(date: NaiveDate, meal: Meal) -> Self {
+impl Meal {
+    pub fn new(calory: u32, protein: u32, carb: u32, fat: u32) -> Self {
         Self {
-            date,
-            meal,
+            name: String::from("Meal"),
+            calory,
+            protein,
+            carb,
+            fat,
         }
     }
 }
@@ -439,5 +451,34 @@ impl States {
         self.protein_add_value = String::from("0");
         self.carb_add_value = String::from("0");
         self.fat_add_value = String::from("0");
+    }
+}
+
+pub trait Summary{
+    fn summarize(&mut self, selected_day: Option<NaiveDate>) ;
+}
+
+impl Summary for MacroData {
+    fn summarize(&mut self, selected_day: Option<NaiveDate>) {
+        if let Some(eats) = self.meal_history.get(&selected_day.unwrap()) {
+            let mut calories: u32 = 0;
+            let mut proteins: u32 = 0;
+            let mut carbs: u32 = 0;
+            let mut fats: u32 = 0;
+
+            for eat in eats {
+                calories += eat.meal.calory;
+                proteins += eat.meal.protein;
+                carbs += eat.meal.carb;
+                fats += eat.meal.fat;
+            }
+
+            self.calory_registered = calories;
+            self.protein_registered = proteins;
+            self.carb_registered = carbs;
+            self.fat_registered = fats;
+        } else {
+            println!("нет данных за выбранный день");
+        }
     }
 }

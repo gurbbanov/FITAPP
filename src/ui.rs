@@ -5,7 +5,7 @@ use egui_extras::{Size, Strip, StripBuilder};
 use time::{OffsetDateTime};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate};
 
-use crate::models::{AppMedia, States, UserDataPack, WorkoutPlanned, WorkoutTemplate};
+use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutTemplate};
 use crate::muscles::{workout_tracker_widget_front, workout_tracker_widget_behind};
 use crate::tools::weekday_iso;
 
@@ -871,43 +871,53 @@ impl Gui<'_> {
                                             ScrollArea::vertical()
                                                 .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
                                                 .show(ui, |ui| {
-                                                    for i in 0..10 {
-                                                        ui.vertical(|ui| {
-                                                            ui.set_height(42.0);
-                                                            ui.horizontal_centered(|ui| {
-                                                                ui.vertical(|ui| {
+                                                    // for i in 0..10 {
+                                                    for j in self.datas.macro_data.meal_history.get(&self.states.selected_day) {
+                                                        for i in j {
+                                                            ui.vertical(|ui| {
+                                                                ui.set_height(42.0);
+                                                                ui.horizontal_centered(|ui| {
+                                                                    ui.vertical(|ui| {
+                                                                        ui.add_space(5.0);
+                                                                        ui.add(Label::new(RichText::new("Meal").size(17.0)));
+                                                                        // ui.add(Label::new(RichText::new("11 May 11:29").size(10.0)));
+                                                                        ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%b %e"), i.date.format("%T"))).size(10.0)));
+                                                                    });
+                                                                    ui.add_space(140.0);
+                                                                    
+                                                                    ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
+                                                                        .fill(Color32::from_rgb(140, 0, 0)) 
+                                                                        .min_size(Vec2::new(65.0, 25.0))
+                                                                        .rounding(9));
+
                                                                     ui.add_space(5.0);
-                                                                    ui.add(Label::new(RichText::new("Meal").size(17.0)));
-                                                                    ui.add(Label::new(RichText::new("11 May 11:29").size(10.0)));
-                                                                });
-                                                                ui.add_space(140.0);
-                                                                
-                                                                ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
-                                                                    .fill(Color32::from_rgb(140, 0, 0)) 
-                                                                    .min_size(Vec2::new(65.0, 25.0))
+                                                                    
+                                                                    ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
+                                                                    .fill(Color32::from_rgb(0, 79, 148)) 
+                                                                    .min_size(Vec2::new(50.0, 25.0))
                                                                     .rounding(9));
-
-                                                                ui.add_space(5.0);
                                                                 
-                                                                ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
-                                                                .fill(Color32::from_rgb(0, 79, 148)) 
-                                                                .min_size(Vec2::new(50.0, 25.0))
-                                                                .rounding(9));
-                                                            
-                                                                ui.add_space(20.0);
+                                                                    ui.add_space(10.0);
 
-                                                                ui.vertical(|ui| {
-                                                                    ui.add_space(6.0);
-                                                                    ui.add(Label::new(RichText::new("+197 cals").size(16.0).color(Color32::from_rgb(21, 141, 0))));
-                                                                    ui.horizontal(|ui| {
-                                                                        ui.add(Label::new(RichText::new("38p").size(10.0).color(Color32::BLUE)));
-                                                                        ui.add(Label::new(RichText::new("67c").size(10.0).color(Color32::ORANGE)));
-                                                                        ui.add(Label::new(RichText::new("26f").size(10.0).color(Color32::RED)));
+                                                                    ui.vertical(|ui| {
+                                                                        ui.add_space(6.0);
+                                                                        // ui.add(Label::new(RichText::new("+197 cals").size(16.0).color(Color32::from_rgb(21, 141, 0))));
+                                                                        // ui.horizontal(|ui| {
+                                                                        //     ui.add(Label::new(RichText::new("38p").size(10.0).color(Color32::BLUE)));
+                                                                        //     ui.add(Label::new(RichText::new("67c").size(10.0).color(Color32::ORANGE)));
+                                                                        //     ui.add(Label::new(RichText::new("26f").size(10.0).color(Color32::RED)));
+                                                                        // });
+                                                                        ui.add(Label::new(RichText::new(format!("+{} cals", i.meal.calory)).size(16.0).color(Color32::from_rgb(21, 141, 0))));
+                                                                        ui.horizontal(|ui| {
+                                                                            ui.add(Label::new(RichText::new(format!("{}p", i.meal.protein)).size(10.0).color(Color32::BLUE)));
+                                                                            ui.add(Label::new(RichText::new(format!("{}c", i.meal.carb)).size(10.0).color(Color32::ORANGE)));
+                                                                            ui.add(Label::new(RichText::new(format!("{}f", i.meal.fat)).size(10.0).color(Color32::RED)));
+                                                                        });
                                                                     });
                                                                 });
+                                                                ui.separator();
                                                             });
-                                                            ui.separator();
-                                                        });
+                                                        }
                                                     }
                                                 });
                                         });
@@ -1062,7 +1072,8 @@ impl Gui<'_> {
                                                         ui.vertical_centered(|ui| {
                                                             if ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.save_button_d.clone()} else {self.medias.save_button_l.clone()})
                                                                 .frame(false)).clicked() {
-                                                                    self.datas.macro_data.update(
+                                                                    self.datas.macro_data.add_meal(
+                                                                        self.states.selected_day,
                                                                         &self.states.calory_add_value,
                                                                         &self.states.protein_add_value, 
                                                                         &self.states.carb_add_value, 
