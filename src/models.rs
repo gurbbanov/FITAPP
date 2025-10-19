@@ -310,10 +310,10 @@ impl MacroData {
             protein_goal: 200,
             carb_goal: 90,
             fat_goal: 50,
-            calory_registered: 100,
-            protein_registered: 100,
-            carb_registered: 50,
-            fat_registered: 40,
+            calory_registered: 0,
+            protein_registered: 0,
+            carb_registered: 0,
+            fat_registered: 0,
             meal_registered: 0,
         }
     }
@@ -416,6 +416,8 @@ pub struct States {
     pub protein_add_value: String,
     pub carb_add_value: String,
     pub fat_add_value: String,
+    pub alert_modal: bool,
+    pub delete_was_positive: bool,
     // pub calories:u32,
     // pub proteins: u32,
     // pub carbs: u32,
@@ -439,6 +441,8 @@ impl States {
             protein_add_value: String::from("0"),
             carb_add_value: String::from("0"),
             fat_add_value: String::from("0"),
+            alert_modal: false,
+            delete_was_positive: false,
             // calories: 0,
             // proteins: 0,
             // carbs: 0,
@@ -454,8 +458,8 @@ impl States {
     }
 }
 
-pub trait Summary{
-    fn summarize(&mut self, selected_day: Option<NaiveDate>) ;
+pub trait Summary {
+    fn summarize(&mut self, selected_day: Option<NaiveDate>);
 }
 
 impl Summary for MacroData {
@@ -478,7 +482,12 @@ impl Summary for MacroData {
             self.carb_registered = carbs;
             self.fat_registered = fats;
         } else {
-            println!("нет данных за выбранный день");
+            self.calory_registered = 0;
+            self.protein_registered = 0;
+            self.carb_registered = 0;
+            self.fat_registered = 0;
+            // println!("нет данных за выбранный день");
+            // MacroData::default()
         }
     }
 }
