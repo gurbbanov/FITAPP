@@ -7,7 +7,9 @@ use chrono::{Local, NaiveDate, NaiveTime};
 
 #[derive(Clone)]
 pub struct AppMedia<'a> {
-    pub ambient: ImageSource<'a>,
+    pub ambient_blue: ImageSource<'a>,
+    pub ambient_red: ImageSource<'a>,
+    pub ambient_green: ImageSource<'a>,
     pub left_arrow: ImageSource<'a>,
     pub right_arrow: ImageSource<'a>,
     pub default_pp: ImageSource<'a>,
@@ -32,7 +34,9 @@ pub struct AppMedia<'a> {
 impl AppMedia<'_> {
     pub fn load_media(ctx: &Context) -> Self {
         Self {
-            ambient:  include_image!("../medias/test.png"),
+            ambient_blue:  include_image!("../medias/ambient_blue.png"),
+            ambient_red: include_image!("../medias/ambient_red.png"),
+            ambient_green: include_image!("../medias/ambient_green.png"),
             // left_arrow: load_png(ctx, include_bytes!("../arrow_left.png")).expect("не удалось загрузить left_arrow"),
             left_arrow: include_image!("../medias/arrow_left.png"),
             right_arrow: include_image!("../medias/arrow_right.png"),
@@ -418,6 +422,7 @@ pub struct States {
     pub fat_add_value: String,
     pub alert_modal: bool,
     pub delete_was_positive: bool,
+    pub water_add_clicked: bool,
     // pub calories:u32,
     // pub proteins: u32,
     // pub carbs: u32,
@@ -428,7 +433,7 @@ impl States {
     pub fn default() -> Self {
         Self {
             calory_add_modal: false,
-            selected_tab: 3,
+            selected_tab: 4,
             skip_days: 0,
             // selected_day: OffsetDateTime::now_local().unwrap(),
             selected_day: Local::now().date_naive(),
@@ -443,6 +448,7 @@ impl States {
             fat_add_value: String::from("0"),
             alert_modal: false,
             delete_was_positive: false,
+            water_add_clicked: false,
             // calories: 0,
             // proteins: 0,
             // carbs: 0,

@@ -26,7 +26,7 @@ impl Gui<'_> {
         }
     }
 
-    pub fn home(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui) {
+    pub fn home(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, tint_color: Color32) {
         let available_width = ui.available_width();
         // let is_dark = ctx.style().visuals.dark_mode;
 
@@ -256,6 +256,36 @@ impl Gui<'_> {
                         });
                 });
             });
+
+        let screen_rect = ctx.screen_rect();
+        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+        painter.rect_filled(
+            screen_rect,
+            0.0,
+            egui::Color32::from_rgba_unmultiplied(20, 20, 20, 0),
+        );
+
+        ui.allocate_ui_at_rect(screen_rect, |ui| {
+            ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+            });
+        });
+
+                                    // egui::Area::new("modal_blocker".into())
+                                    //     .order(egui::Order::Background)
+                                    //     .fixed_pos(screen_rect.min)
+                                    //     .show(ctx, |ui| {
+                                    //         let _response = ui.allocate_response(screen_rect.size(), Sense::click());
+                                    //     });
+
+                                    // let window_size = vec2(250.0, 70.0);
+
+                                    // egui::Window::new("warning")
+                                    //     .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+                                    //     .fixed_size(window_size)
+                                    //     .collapsible(false)
+                                    //     .resizable(false)
+                                    //     .fade_in(true)
     }
 
     pub fn workouts_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, elements_color: Color32, tint_color: Color32) {
@@ -518,7 +548,7 @@ impl Gui<'_> {
                         });
 
                         ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
-                            ui.add(Image::new(self.medias.ambient.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                            ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
                         });
                     });
 
@@ -934,7 +964,11 @@ impl Gui<'_> {
                                     ui.painter().rect_filled(
                                         screen_rect,
                                         0.0,
-                                        egui::Color32::from_rgba_unmultiplied(20, 20, 20,150),
+                                        if is_dark {
+                                            egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
+                                        } else {
+                                            egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+                                        }
                                     );
 
                                     egui::Area::new("modal_blocker".into())
@@ -998,7 +1032,6 @@ impl Gui<'_> {
                                                 });
                                         });
                                 }
-
                             });
                         });
 
@@ -1022,9 +1055,16 @@ impl Gui<'_> {
                             });
                         });
 
-                        ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
-                            ui.add(Image::new(self.medias.ambient.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
-                        });
+
+                        if self.states.alert_modal {
+                            ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                                ui.add(Image::new(self.medias.ambient_red.clone()).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                            });
+                        } else {
+                            ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                                ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                            });
+                        }
                 });
 
                 strip.cell(|ui| {
@@ -1257,6 +1297,186 @@ impl Gui<'_> {
     }
 
     pub fn water_tracker_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, elements_color: Color32, tint_color: Color32) {
+        let is_dark = ctx.style().visuals.dark_mode;
+        let mut other_elements_color;
+        let mut text_color;
+
+        let spacing = 3.0;
+
+        let circle_size = 14.0;
+        let water_rows = 4;
+        let water_cols = 20;
+        let water_percent = ((self.datas.water_data.water_registered as f32 / self.datas.water_data.water_goal as f32) * 100.0) as u32;
+        let water_tracker_width = (circle_size * water_cols as f32) + (spacing * (water_cols as f32 - 1.0));
+
+        if is_dark {
+            other_elements_color = Color32::from_rgb(67, 67, 67);
+            text_color = Color32::WHITE;
+        } else {
+            other_elements_color = Color32::from_rgb(240, 240, 240);
+            text_color = Color32::BLACK;
+        }
+
+        let now = chrono::Local::now();
+        StripBuilder::new(ui)
+            // .size(Size::exact(100.0))
+            .size(Size::remainder())
+            .size(Size::exact(self.states.strip_size))
+            .vertical(|mut strip|{
+                strip.cell(|ui| {
+                    let top_rect = egui::Rect::from_min_size(
+                        ctx.screen_rect().left_top(),
+                        egui::vec2(ui.available_width(), 100.0),
+                    );
+
+                    Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
+                        nw: 0,
+                        ne: 0,
+                        sw: 24,
+                        se: 24,
+                    });
+
+                    ui.allocate_ui_at_rect(top_rect, |ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.add_space(20.0);
+                            ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%B"), self.states.selected_day.format("%d"))).size(25.0).strong()).selectable(false));
+                            ui.add(Label::new(RichText::new(format!("{}", self.states.selected_day.format("%A"))).size(15.0).strong()).selectable(false));
+                        });
+                    });
+
+                    ui.add_space(43.0);
+
+                    ui.vertical_centered(|ui| {
+                        ui.add(Label::new(RichText::new("WATER").size(25.0).strong()).selectable(false));
+
+                        let water_rect =egui::Rect::from_min_size(
+                            // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
+                            ctx.screen_rect().left_top() + vec2(150.0, 155.0),
+                            egui::vec2(ui.available_width() - 300.0, 90.0),
+                        );
+
+                        ui.painter().rect_filled(
+                            water_rect,
+                            egui::epaint::Rounding {
+                                nw: 24,
+                                ne: 24,
+                                sw: 24,
+                                se: 24,
+                            },
+                            elements_color,
+                        );
+
+                        ui.allocate_ui_at_rect(water_rect, |ui| {
+                            ui.add_space(water_rect.width() / 12.0);
+
+                            ui.vertical_centered(|ui| {
+                                ui.label(RichText::new(format!("{}/{}", self.datas.water_data.water_registered, self.datas.water_data.water_goal)).size(35.0).strong());
+                            });
+                        });
+                    });
+
+                    ui.add_space(40.0);
+
+                    ui.vertical_centered(|ui| {
+                        ui.set_width(350.0);
+                        ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
+                        self.water_tracker_bar(ctx, frame, ui, spacing, circle_size, water_rows, water_cols, water_percent);
+
+                        ui.add_space(40.0);
+
+
+                    });
+
+
+
+
+                    let screen_rect = ctx.screen_rect();
+                    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
+
+                    ui.allocate_ui_at_rect(screen_rect, |ui| {
+                        ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                            ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                        });
+                    });
+                });
+
+                strip.cell(|ui| {
+                    let bot_rect = egui::Rect::from_min_max(
+                        // ctx.screen_rect().left_bottom() - vec2(0.0, 150.0),
+                        // ctx.screen_rect().right_bottom().to_vec2(),
+                        ctx.screen_rect().left_bottom() - vec2(0.0, self.states.strip_size),
+                        ctx.screen_rect().right_bottom(),
+                    );
+
+                    let mut target_height = 150.0;
+
+                    if self.states.calory_add_clicked {
+                        target_height = 330.0;
+                    };
+
+                    self.states.strip_size = ui.ctx().animate_value_with_time(
+                        ui.id().with("history_height"),
+                        target_height,
+                        0.6, 
+                    );
+
+                    Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
+                        nw: 110,
+                        ne: 110,
+                        sw: 0,
+                        se: 0,
+                    });
+
+
+                    ui.vertical_centered(|ui| {
+                        ui.allocate_ui_at_rect(bot_rect, |ui| {
+                            if !self.states.calory_add_clicked {
+                                let rect = egui::Rect::from_min_size(
+                                    egui::pos2(bot_rect.center().x - 35.0, bot_rect.left_top().y - 20.0),
+                                    egui::vec2(70.0, 25.0),
+                                );
+
+                                Self::draw_rect_with_black_shadow(ui.painter(), rect, 5, other_elements_color, 0.0, 1.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
+                                    nw: 5,
+                                    ne: 5,
+                                    sw: 5,
+                                    se: 5,
+                                });
+
+                                ui.allocate_ui_at_rect(rect, |ui| {
+                                    if ui.add(
+                                        Button::image_and_text(self.medias.switch.clone(), RichText::new("switch").size(13.0).strong().color(text_color))
+                                            .fill(elements_color)
+                                            .min_size(Vec2::new(70.0, 25.0))
+                                            .rounding(5.0),
+                                    ).clicked() {
+                                        self.states.calendar_mode_calory_ui = !self.states.calendar_mode_calory_ui;
+                                    };
+                                });
+                                if self.states.calendar_mode_calory_ui {
+                                    self.draw_calendar(ui, bot_rect, now);
+                                } else {
+                                    ui.add_space(20.0);
+                                    if ui.add(
+                                        Button::new(RichText::new("add water").size(18.0).strong().color(Color32::WHITE))
+                                            //     egui::Color32::from_rgb(91, 0, 113),
+                                            // .fill(Color32::from_rgb(21, 141, 0)) 
+                                            .fill(Color32::from_rgb(0, 75, 142))
+                                            .min_size(Vec2::new(120.0, 40.0))
+                                            .rounding(12),
+                                    ).clicked() {
+                                        self.states.water_add_clicked= !self.states.water_add_clicked;
+                                    };
+                                }
+                            } else {
+                                
+                            }
+                        });
+                    });
+                });
+
+            });
+
     }
             
     pub fn navigation_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
@@ -1274,7 +1494,7 @@ impl Gui<'_> {
 
         match self.states.selected_tab {
             // 0 => self.testing(ctx, frame, ui),
-            0 => self.home(ctx, frame, ui),
+            0 => self.home(ctx, frame, ui, tint_color),
             // 1 => self.friends_ui(ctx, frame, ui),
             2 => self.workouts_ui(ctx, frame, ui, elements_color, tint_color),
             3 => self.calory_tracker_ui(ctx, frame, ui, elements_color, tint_color),
