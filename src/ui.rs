@@ -999,7 +999,8 @@ impl Gui<'_> {
                                                     strip.cell(|ui| {
                                                         ui.vertical_centered(|ui| {
                                                             if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE)) 
-                                                                .fill(Color32::GRAY)
+                                                                // .fill(Color32::GRAY)
+                                                                .fill(Color32::from_rgb(96, 96, 96))
                                                                 .min_size(ui.available_rect_before_wrap().size())
                                                                 .rounding(egui::epaint::Rounding {
                                                                     nw: 0,
@@ -1055,7 +1056,10 @@ impl Gui<'_> {
                             });
                         });
 
+                    let screen_rect = ctx.screen_rect();
+                    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
 
+                    ui.allocate_ui_at_rect(screen_rect, |ui| {
                         if self.states.alert_modal {
                             ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
                                 ui.add(Image::new(self.medias.ambient_red.clone()).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
@@ -1065,6 +1069,7 @@ impl Gui<'_> {
                                 ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
                             });
                         }
+                    });
                 });
 
                 strip.cell(|ui| {
@@ -1077,7 +1082,7 @@ impl Gui<'_> {
 
                     let mut target_height = 150.0;
 
-                    if self.states.calory_add_clicked {
+                    if self.states.macro_add_clicked {
                         target_height = 330.0;
                     };
 
@@ -1087,7 +1092,6 @@ impl Gui<'_> {
                         0.6, 
                     );
 
-
                     Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
                         nw: 110,
                         ne: 110,
@@ -1095,10 +1099,9 @@ impl Gui<'_> {
                         se: 0,
                     });
 
-
                     ui.vertical_centered(|ui| {
                         ui.allocate_ui_at_rect(bot_rect, |ui| {
-                            if !self.states.calory_add_clicked {
+                            if !self.states.macro_add_clicked {
                                 let rect = egui::Rect::from_min_size(
                                     egui::pos2(bot_rect.center().x - 35.0, bot_rect.left_top().y - 20.0),
                                     egui::vec2(70.0, 25.0),
@@ -1132,7 +1135,7 @@ impl Gui<'_> {
                                             .min_size(Vec2::new(120.0, 40.0))
                                             .rounding(12),
                                     ).clicked() {
-                                        self.states.calory_add_clicked = !self.states.calory_add_clicked;
+                                        self.states.macro_add_clicked = !self.states.macro_add_clicked;
                                     };
                                 }
                             } else {
@@ -1153,7 +1156,7 @@ impl Gui<'_> {
                                                         ui.vertical_centered(|ui| {
                                                             if ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.cancel_button_d.clone()} else {self.medias.cancel_button_l.clone()})
                                                                 .frame(false)).clicked() {
-                                                                    self.states.calory_add_clicked = !self.states.calory_add_clicked;
+                                                                    self.states.macro_add_clicked = !self.states.macro_add_clicked;
                                                                 };
                                                         });
                                                     });
@@ -1196,7 +1199,7 @@ impl Gui<'_> {
 
                                                                     self.datas.macro_data.summarize(Some(self.states.selected_day));
                                                                     self.states.reset_macros();
-                                                                    self.states.calory_add_clicked = !self.states.calory_add_clicked;
+                                                                    self.states.macro_add_clicked = !self.states.macro_add_clicked;
                                                                 };
                                                         });
                                                     });
@@ -1265,7 +1268,7 @@ impl Gui<'_> {
                                                     strip.cell(|ui| {
                                                         ui.set_width(130.0);
                                                         ui.vertical_centered(|ui| {
-                                                            ui.add(Label::new(RichText::new("add carbs:").size(18.0).color(text_color).strong()).selectable(false));
+                                                            ui.add(Label::new(RichText::new("add fats:").size(18.0).color(text_color).strong()).selectable(false));
                                                             ui.add_space(REMAINDER);
 
                                                             let fats_rect = ui.available_rect_before_wrap();
@@ -1306,7 +1309,7 @@ impl Gui<'_> {
         let circle_size = 14.0;
         let water_rows = 4;
         let water_cols = 20;
-        let water_percent = ((self.datas.water_data.water_registered as f32 / self.datas.water_data.water_goal as f32) * 100.0) as u32;
+        let water_percent = ((self.datas.water_data.hydrolized as f32 / self.datas.water_data.water_goal as f32) * 100.0) as u32;
         let water_tracker_width = (circle_size * water_cols as f32) + (spacing * (water_cols as f32 - 1.0));
 
         if is_dark {
@@ -1321,6 +1324,7 @@ impl Gui<'_> {
         StripBuilder::new(ui)
             // .size(Size::exact(100.0))
             .size(Size::remainder())
+            // .size(Size::exact(200.0))
             .size(Size::exact(self.states.strip_size))
             .vertical(|mut strip|{
                 strip.cell(|ui| {
@@ -1370,7 +1374,7 @@ impl Gui<'_> {
                             ui.add_space(water_rect.width() / 12.0);
 
                             ui.vertical_centered(|ui| {
-                                ui.label(RichText::new(format!("{}/{}", self.datas.water_data.water_registered, self.datas.water_data.water_goal)).size(35.0).strong());
+                                ui.label(RichText::new(format!("{}/{}", self.datas.water_data.hydrolized, self.datas.water_data.water_goal)).size(35.0).strong());
                             });
                         });
                     });
@@ -1381,22 +1385,419 @@ impl Gui<'_> {
                         ui.set_width(350.0);
                         ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
                         self.water_tracker_bar(ctx, frame, ui, spacing, circle_size, water_rows, water_cols, water_percent);
+                    });
+                    
+                    // ui.add_space(REMAINDER);
+                    
+                    ui.vertical_centered(|ui| {
+                        let rect_length = 150.0;
+                        
+                        let available_width = ui.available_width();
+                        
+                        ui.add(Label::new(RichText::new("RECENT DRINKS").size(25.0).strong()).selectable(false));
 
-                        ui.add_space(40.0);
+                        let second_rect = Rect::from_min_size(
+                            Pos2::new((available_width/ 2.0 ) - (rect_length / 2.0), ctx.screen_rect().min.y + 400.0),
+                            Vec2::new(rect_length, ctx.screen_rect().min.y + 100.0)
+                        );
 
+                        let first_rect = Rect::from_min_size(
+                            second_rect.left_top() - Vec2::new(rect_length + 30.0, 0.0),
+                            Vec2::new(rect_length, ctx.screen_rect().min.y + 100.0),
+                        );
 
+                        let third_rect = Rect::from_min_size(
+                            second_rect.right_top() + Vec2::new(30.0, 0.0),
+                            Vec2::new(rect_length, ctx.screen_rect().min.y + 100.0),
+                        );
+
+                        ui.horizontal(|ui| {
+                            ui.painter().rect_filled(
+                                second_rect,
+                                egui::epaint::Rounding {
+                                    nw: 19,
+                                    ne: 19,
+                                    sw: 19,
+                                    se: 19,
+                                },
+                                elements_color,
+                            );
+
+                            ui.allocate_ui_at_rect(second_rect, |ui| {
+                                ui.vertical_centered(|ui| {
+                                    StripBuilder::new(ui)
+                                        .size(Size::relative(0.8))
+                                        .size(Size::relative(0.2))
+                                        .vertical(|mut strip| {
+                                            strip.cell(|ui| {
+                                                StripBuilder::new(ui)
+                                                    .size(Size::relative(0.2))
+                                                    .size(Size::relative(0.8))
+                                                    .horizontal(|mut strip| {
+                                                        strip.cell(|ui| {
+                                                            ui.add_space(25.0);
+                                                            ui.horizontal(|ui| {
+                                                                ui.add_space(15.0);
+                                                                ui.add_sized(vec2(45.0, 45.0), Image::new(self.medias.coffee.clone()));
+                                                            });
+                                                        });
+
+                                                        strip.cell(|ui| {
+                                                            ui.add_space(5.0);
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.add(Label::new(RichText::new("COFFEE").size(17.0).color(Color32::WHITE)));
+                                                            });
+
+                                                            ui.add_space(5.0);
+                                                            
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
+                                                                ui.add(Label::new(RichText::new("25 ml").size(15.0).color(Color32::WHITE)));
+                                                            });
+
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_sized(vec2(18.0, 18.0), Image::new(self.medias.ml.clone()));
+                                                                ui.add(Label::new(RichText::new("250 ml").size(15.0).color(Color32::WHITE)));
+                                                            });
+                                                        })
+                                                    });
+                                            });
+
+                                            strip.cell(|ui| {
+                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE)) 
+                                                    // .fill(Color32::GRAY)
+                                                    .fill(Color32::from_rgb(96, 96, 96))
+                                                    .min_size(ui.available_rect_before_wrap().size())
+                                                    .rounding(egui::epaint::Rounding {
+                                                        nw: 0,
+                                                        ne: 0,
+                                                        sw: 25,
+                                                        se: 25,
+                                                    }));
+                                            });
+                                        });
+                                });
+                            });
+
+                            ui.painter().rect_filled(
+                                first_rect,
+                                egui::epaint::Rounding {
+                                    nw: 19,
+                                    ne: 19,
+                                    sw: 19,
+                                    se: 19,
+                                },
+                                elements_color,
+                            );
+
+                            ui.allocate_ui_at_rect(first_rect, |ui| {
+                                ui.vertical_centered(|ui| {
+                                    StripBuilder::new(ui)
+                                        .size(Size::relative(0.8))
+                                        .size(Size::relative(0.2))
+                                        .vertical(|mut strip| {
+                                            strip.cell(|ui| {
+                                                StripBuilder::new(ui)
+                                                    .size(Size::relative(0.2))
+                                                    .size(Size::relative(0.8))
+                                                    .horizontal(|mut strip| {
+                                                        strip.cell(|ui| {
+                                                            ui.add_space(15.0);
+                                                            ui.horizontal(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.add_sized(vec2(55.0, 55.0), Image::new(self.medias.bottle.clone()));
+                                                            });
+                                                        });
+
+                                                        strip.cell(|ui| {
+                                                            ui.add_space(5.0);
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.add(Label::new(RichText::new("WATER").size(15.0).color(Color32::WHITE)));
+                                                            });
+
+                                                            ui.add_space(5.0);
+                                                            
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                            });
+
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_sized(vec2(18.0, 18.0), Image::new(self.medias.ml.clone()));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                            });
+                                                        })
+                                                    });
+                                            });
+
+                                            strip.cell(|ui| {
+                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE)) 
+                                                    // .fill(Color32::GRAY)
+                                                    .fill(Color32::from_rgb(96, 96, 96))
+                                                    .min_size(ui.available_rect_before_wrap().size())
+                                                    .rounding(egui::epaint::Rounding {
+                                                        nw: 0,
+                                                        ne: 0,
+                                                        sw: 25,
+                                                        se: 25,
+                                                    }));
+                                            });
+                                        });
+                                });
+                            });
+
+                            ui.painter().rect_filled(
+                                third_rect,
+                                egui::epaint::Rounding {
+                                    nw: 19,
+                                    ne: 19,
+                                    sw: 19,
+                                    se: 19,
+                                },
+                                elements_color,
+                            );
+
+                            ui.allocate_ui_at_rect(third_rect, |ui| {
+                                ui.vertical_centered(|ui| {
+                                    StripBuilder::new(ui)
+                                        .size(Size::relative(0.8))
+                                        .size(Size::relative(0.2))
+                                        .vertical(|mut strip| {
+                                            strip.cell(|ui| {
+                                                StripBuilder::new(ui)
+                                                    .size(Size::relative(0.3))
+                                                    .size(Size::relative(0.7))
+                                                    .horizontal(|mut strip| {
+                                                        strip.cell(|ui| {
+                                                            ui.add_space(25.0);
+                                                            ui.horizontal(|ui| {
+                                                                ui.add_space(15.0);
+                                                                ui.add_sized(vec2(45.0, 45.0), Image::new(self.medias.glass.clone()));
+                                                            });
+                                                        });
+
+                                                        strip.cell(|ui| {
+                                                            ui.add_space(5.0);
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.add(Label::new(RichText::new("WATER").size(15.0).color(Color32::WHITE)));
+                                                            });
+
+                                                            ui.add_space(5.0);
+                                                            
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                            });
+
+                                                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                                                ui.add_sized(vec2(18.0, 18.0), Image::new(self.medias.ml.clone()));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                            });
+                                                        })
+                                                    });
+                                            });
+
+                                            strip.cell(|ui| {
+                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE)) 
+                                                    // .fill(Color32::GRAY)
+                                                    .fill(Color32::from_rgb(96, 96, 96))
+                                                    .min_size(ui.available_rect_before_wrap().size())
+                                                    .rounding(egui::epaint::Rounding {
+                                                        nw: 0,
+                                                        ne: 0,
+                                                        sw: 25,
+                                                        se: 25,
+                                                    }));
+                                            });
+                                        });
+                                });
+                            });
+                        });
                     });
 
+                    ui.add_space(REMAINDER);
 
+                    ui.vertical_centered(|ui| {
+                        StripBuilder::new(ui)
+                            .size(Size::exact(30.0))
+                            .size(Size::exact(3.0))
+                            .size(Size::remainder())
+                            .size(Size::exact(20.0))
+                            .vertical(|mut strip| {
+                                strip.cell(|ui| {
+                                    ui.vertical_centered(|ui| {
+                                        ui.add(Label::new(RichText::new("HISTORY").size(25.0).strong()).selectable(false));
+                                    });
+                                });
+                                    
+                                strip.empty();
 
+                                strip.cell(|ui| {
+                                    ui.set_max_width(480.0);
+
+                                    let history_rect = ui.available_rect_before_wrap();
+
+                                    ui.vertical_centered(|ui| {
+                                        ui.painter().rect_filled(
+                                            history_rect,
+                                            egui::epaint::Rounding {
+                                                nw: 28,
+                                                ne: 28,
+                                                sw: 28,
+                                                se: 28,
+                                            },
+                                            elements_color,
+                                        );
+                                    });
+
+                                    ui.allocate_ui_at_rect(history_rect.shrink2(vec2(20.0, 5.0)), |ui| {
+                                        ScrollArea::vertical()
+                                            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                                            .show(ui, |ui| {
+                                                if let Some(drinks) = self.datas.water_data.water_history.get_mut(&self.states.selected_day) {
+                                                    for (index, drink) in drinks.clone().iter().enumerate() {
+                                                        ui.vertical(|ui| {
+                                                            ui.set_height(42.0);
+                                                            ui.horizontal_centered(|ui| {
+                                                                ui.vertical(|ui| {
+                                                                    ui.add_space(5.0);
+                                                                    ui.add(Label::new(RichText::new(format!("{}", drink.beverage.name)).size(17.0)));
+                                                                    ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%b %e"), drink.date.format("%T"))).size(10.0)));
+                                                                });
+                                                                ui.add_space(140.0);
+                                                                
+                                                                if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
+                                                                    .fill(Color32::from_rgb(140, 0, 0)) 
+                                                                    .min_size(Vec2::new(65.0, 25.0))
+                                                                    .rounding(9)).clicked() {
+                                                                        self.states.alert_modal = !self.states.alert_modal;
+                                                                    };
+
+                                                                if self.states.delete_was_positive {
+                                                                    drinks.remove(index);
+                                                                    self.states.delete_was_positive = false;
+                                                                }
+
+                                                                ui.add_space(5.0);
+                                                                
+                                                                ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
+                                                                .fill(Color32::from_rgb(0, 79, 148)) 
+                                                                .min_size(Vec2::new(50.0, 25.0))
+                                                                .rounding(9));
+                                                            
+                                                                ui.add_space(10.0);
+
+                                                                ui.vertical(|ui| {
+                                                                    ui.add_space(7.0);
+                                                                    ui.add(Label::new(RichText::new(format!("+{} ml", drink.beverage.amount)).size(16.0).color(Color32::from_rgb(0, 79, 148))));
+                                                                    ui.add(Label::new(RichText::new(format!("+{} ml", (drink.beverage.hydration_amount))).size(13.0).color(Color32::from_rgb(0, 170, 255))));
+                                                                });
+                                                            });
+                                                            ui.separator();
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        });
+                                });
+
+                                strip.empty();
+                            });
+
+                            if self.states.alert_modal {
+                                let screen_rect = ctx.screen_rect();
+                                let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+
+                                ui.painter().rect_filled(
+                                    screen_rect,
+                                    0.0,
+                                    if is_dark {
+                                        egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
+                                    } else {
+                                        egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+                                    }
+                                );
+
+                                egui::Area::new("modal_blocker".into())
+                                    .order(egui::Order::Background)
+                                    .fixed_pos(screen_rect.min)
+                                    .show(ctx, |ui| {
+                                        let _response = ui.allocate_response(screen_rect.size(), Sense::click());
+                                    });
+
+                                let window_size = vec2(250.0, 70.0);
+
+                                egui::Window::new("warning")
+                                    .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+                                    .fixed_size(window_size)
+                                    .collapsible(false)
+                                    .resizable(false)
+                                    .show(ctx, |ui| {
+                                        ui.vertical_centered(|ui| {
+                                            ui.add(Label::new(RichText::new("are you sure to delete drink?").size(18.0)));
+                                        });
+
+                                        ui.add_space(REMAINDER);
+
+                                        StripBuilder::new(ui)
+                                            .size(Size::relative(0.5))
+                                            .size(Size::relative(0.5))
+                                            .horizontal(|mut strip| {
+                                                strip.cell(|ui| {
+                                                    ui.vertical_centered(|ui| {
+                                                        if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE)) 
+                                                            // .fill(Color32::GRAY)
+                                                            .fill(Color32::from_rgb(96, 96, 96))
+                                                            .min_size(ui.available_rect_before_wrap().size())
+                                                            .rounding(egui::epaint::Rounding {
+                                                                nw: 0,
+                                                                ne: 0,
+                                                                sw: 9,
+                                                                se: 0,
+                                                            })).clicked() {
+                                                                self.states.alert_modal = !self.states.alert_modal;
+                                                            }
+                                                    });
+                                                });
+
+                                                strip.cell(|ui| {
+                                                    ui.vertical_centered(|ui| {
+                                                        if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
+                                                            .fill(Color32::from_rgb(140, 0, 0)) 
+                                                            // .min_size(Vec2::new(65.0, 25.0))
+                                                            .min_size(ui.available_rect_before_wrap().size())
+                                                            .rounding(egui::epaint::Rounding {
+                                                                nw: 0,
+                                                                ne: 0,
+                                                                sw: 0,
+                                                                se: 9,
+                                                            })).clicked() {
+                                                                self.states.delete_was_positive = true;
+                                                                self.states.alert_modal = !self.states.alert_modal;
+                                                            }
+                                                    });
+                                                });
+                                            });
+                                    });
+                            }
+                    });
 
                     let screen_rect = ctx.screen_rect();
                     let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
 
                     ui.allocate_ui_at_rect(screen_rect, |ui| {
-                        ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
-                            ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
-                        });
+                        if self.states.alert_modal {
+                            ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                                ui.add(Image::new(self.medias.ambient_red.clone()).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                            });
+                        } else {
+                            ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                                ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                            });
+                        }
                     });
                 });
 
@@ -1410,8 +1811,8 @@ impl Gui<'_> {
 
                     let mut target_height = 150.0;
 
-                    if self.states.calory_add_clicked {
-                        target_height = 330.0;
+                    if self.states.water_add_clicked {
+                        target_height = 350.0;
                     };
 
                     self.states.strip_size = ui.ctx().animate_value_with_time(
@@ -1427,10 +1828,9 @@ impl Gui<'_> {
                         se: 0,
                     });
 
-
                     ui.vertical_centered(|ui| {
                         ui.allocate_ui_at_rect(bot_rect, |ui| {
-                            if !self.states.calory_add_clicked {
+                            if !self.states.water_add_clicked {
                                 let rect = egui::Rect::from_min_size(
                                     egui::pos2(bot_rect.center().x - 35.0, bot_rect.left_top().y - 20.0),
                                     egui::vec2(70.0, 25.0),
@@ -1469,7 +1869,102 @@ impl Gui<'_> {
                                     };
                                 }
                             } else {
-                                
+                                StripBuilder::new(ui)
+                                    .size(Size::exact(110.0))
+                                    // .size(Size::exact(25.0))
+                                    .size(Size::remainder())
+                                    // .size(Size::exact(85.0))
+                                    .vertical(|mut strip| {
+                                        strip.cell(|ui| {
+                                            StripBuilder::new(ui)
+                                                .size(Size::exact(120.0))
+                                                .size(Size::remainder())
+                                                .size(Size::exact(120.0))
+                                                .horizontal(|mut strip| {
+                                                    strip.cell(|ui| {
+                                                        ui.add_space(7.0);
+                                                        ui.vertical_centered(|ui| {
+                                                            if ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.cancel_button_d.clone()} else {self.medias.cancel_button_l.clone()})
+                                                                .frame(false)).clicked() {
+                                                                    self.states.water_add_clicked = !self.states.water_add_clicked;
+                                                                };
+                                                        });
+                                                    });
+
+                                                    strip.cell(|ui| {
+                                                        ui.set_width(200.0);
+
+                                                        ui.vertical_centered(|ui| {
+                                                            ui.add_space(REMAINDER * 3.0);
+                                                            ui.add(Label::new(RichText::new("add beverage:").size(25.0).color(text_color).strong()).selectable(false));
+                                                        });
+                                                    });
+
+                                                    strip.cell(|ui| {
+                                                        ui.add_space(7.0);
+                                                        ui.vertical_centered(|ui| {
+                                                            if ui.add_sized(vec2(85.0, 60.0), ImageButton::new(if is_dark {self.medias.save_button_d.clone()} else {self.medias.save_button_l.clone()})
+                                                                .frame(false)).clicked() {
+                                                                    self.datas.water_data.add_drink(self.states.selected_day, &self.states.water_add_value, &self.states.hydration_percent);
+
+                                                                    self.datas.water_data.summarize(Some(self.states.selected_day));
+                                                                    self.states.reset_water();
+                                                                    self.states.water_add_clicked = !self.states.water_add_clicked;
+                                                                };
+                                                        });
+                                                    });
+                                                });
+                                        });
+
+                                        strip.cell(|ui| {
+                                            StripBuilder::new(ui)
+                                                .size(Size::relative(0.5))
+                                                .size(Size::relative(0.5))
+                                                .horizontal(|mut strip| {
+                                                    strip.cell(|ui| {
+                                                        ui.set_width(150.0);
+                                                        ui.set_height(100.0);
+                                                        ui.vertical_centered(|ui| {
+                                                            ui.add(Label::new(RichText::new("drink amount:").size(18.0).color(text_color).strong()).selectable(false));
+                                                            let calory_rect = ui.available_rect_before_wrap();
+                                                            ui.painter().rect_filled(calory_rect, 25.0, other_elements_color);
+                                                            ui.vertical_centered(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+
+                                                                ui.add_sized(
+                                                                    [calory_rect.width() - 20.0, calory_rect.height() - 30.0],
+                                                                    egui::TextEdit::singleline(&mut self.states.water_add_value)
+                                                                        .font(egui::FontId::new(40.0, egui::FontFamily::Proportional)).background_color(other_elements_color).frame(false).char_limit(4),
+                                                                );
+                                                            });
+                                                            ui.painter().rect_stroke(calory_rect, 25.0, Stroke::new(2.0, Color32::from_rgb(0, 79, 148)), StrokeKind::Outside);
+                                                        });
+                                                    });
+
+                                                    strip.cell(|ui| {
+                                                        ui.set_width(150.0);
+                                                        ui.set_height(100.0);
+                                                        ui.vertical_centered(|ui| {
+                                                            ui.add(Label::new(RichText::new("hydration percent:").size(18.0).color(text_color).strong()).selectable(false));
+                                                            let calory_rect = ui.available_rect_before_wrap();
+                                                            ui.painter().rect_filled(calory_rect, 25.0, other_elements_color);
+                                                            ui.vertical_centered(|ui| {
+                                                                ui.add_space(5.0);
+                                                                ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+
+                                                                ui.add_sized(
+                                                                    [calory_rect.width() - 20.0, calory_rect.height() - 30.0],
+                                                                    egui::TextEdit::singleline(&mut self.states.hydration_percent)
+                                                                        .font(egui::FontId::new(40.0, egui::FontFamily::Proportional)).background_color(other_elements_color).frame(false).char_limit(4),
+                                                                );
+                                                            });
+                                                            ui.painter().rect_stroke(calory_rect, 25.0, Stroke::new(2.0, Color32::from_rgb(0, 170, 255)), StrokeKind::Outside);
+                                                        });
+                                                    });
+                                                });
+                                        });
+                                    });
                             }
                         });
                     });
@@ -1503,14 +1998,7 @@ impl Gui<'_> {
             _ => {ui.label("empty");},
         }
     }
-        //     0 => self.home(ctx, frame, ui),
-        //     // 1 => self.friends_ui(ctx, frame, ui),
-        //     2 => self.workouts_ui(ctx, frame, ui),
-        //     3 => self.calory_tracker_ui(ctx, frame, ui),
-        //     // 4 => self.water_tracker_ui(ctx, frame, ui, Some(ambient)),
-        //     // 5 => self.statistics_ui(ctx, frame, ui),
-        //     _ => {ui.label("empty");},
-        // }
+
     fn calory_tracker_bar(&mut self, ctx: &Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, spacing: f32, rect_size: f32, rows: u32, cols: u32, calory_percent: u32) {
         ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
 
@@ -1557,11 +2045,12 @@ impl Gui<'_> {
         ui.spacing_mut().item_spacing = egui::vec2(1.0, 3.0);
 
         let mut done_marks = {
-            if self.datas.macro_data.calory_goal> self.datas.macro_data.calory_registered{
+            if self.datas.water_data.water_registered == 0 {
+                0
+            } else if self.datas.water_data.water_goal > self.datas.water_data.hydrolized {
                 (((rows * cols) as f32 / 100.0) * water_percent as f32).round() as u32
             } else {
-            //    rows * cols
-                0
+               rows * cols
             }
         };
 
@@ -1820,6 +2309,7 @@ impl Gui<'_> {
                             ).clicked() {
                                 self.states.selected_day = date;
                                 self.datas.macro_data.summarize(Some(self.states.selected_day));
+                                self.datas.water_data.summarize(Some(self.states.selected_day));
                                 // println!("selected: {:?}", self.states.selected_day);
                             }
                         });

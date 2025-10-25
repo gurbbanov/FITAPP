@@ -28,7 +28,11 @@ pub struct AppMedia<'a> {
     pub save_button_d: ImageSource<'a>,
     pub cancel_button_d: ImageSource<'a>,
     pub switch: ImageSource<'a>,
-    // pub ambient_test: TextureHandle,
+    pub coffee: ImageSource<'a>,
+    pub bottle: ImageSource<'a>,
+    pub glass: ImageSource<'a>,
+    pub drop: ImageSource<'a>,
+    pub ml: ImageSource<'a>,
 }
 
 impl AppMedia<'_> {
@@ -37,7 +41,6 @@ impl AppMedia<'_> {
             ambient_blue:  include_image!("../medias/ambient_blue.png"),
             ambient_red: include_image!("../medias/ambient_red.png"),
             ambient_green: include_image!("../medias/ambient_green.png"),
-            // left_arrow: load_png(ctx, include_bytes!("../arrow_left.png")).expect("не удалось загрузить left_arrow"),
             left_arrow: include_image!("../medias/arrow_left.png"),
             right_arrow: include_image!("../medias/arrow_right.png"),
             default_pp: include_image!("../medias/user.jpg"),
@@ -56,7 +59,11 @@ impl AppMedia<'_> {
             save_button_d: include_image!("../medias/save_button_d.png"),
             cancel_button_d: include_image!("../medias/cancel_button_d.png"),
             switch: include_image!("../medias/switch.png"),
-            // ambient_test: load_png(ctx, include_bytes!("../test.png")).expect("не удалось загрузить ambient_test"),
+            coffee: include_image!("../medias/coffee.png"),
+            bottle: include_image!("../medias/bottle.png"),
+            glass: include_image!("../medias/glass.png"),
+            drop: include_image!("../medias/drop.png"),
+            ml: include_image!("../medias/ml.png"),
         }
     }
 }
@@ -392,18 +399,98 @@ impl Meal {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct WaterData {
+    pub water_history: HashMap<NaiveDate, Vec<Drink>>,
+
     pub water_goal: u32,
     pub water_registered: u32,
+    pub hydrolized: u32,
 }
 
 impl WaterData {
     pub fn default() -> Self {
         Self {
-            water_goal: 0,
+            // meal_history: HashMap::from([(Local::now().date_naive(), vec![Eat::new(chrono::Local::now().time(), Meal::new(100, 100, 100, 100)), Eat::new(chrono::Local::now().time(), Meal::new(10, 10, 10, 10))])]),
+            water_history: HashMap::from([(Local::now().date_naive(), vec![Drink::new(chrono::Local::now().time(), Beverage::new(BeverageCategory::Water, 400, Some(100))), Drink::new(chrono::Local::now().time(), Beverage::new(BeverageCategory::Coffee, 250, Some(100)))])]),
+
+            water_goal: 1000,
             water_registered: 0,
+            hydrolized: 0,
         }
     }
+
+    pub fn add_drink(&mut self, selected_date: NaiveDate, water_amount: &str, hydration_percent: &str) {
+        self.water_history.entry(selected_date).or_default().insert(0, Drink::new(chrono::Local::now().time(), Beverage::new(
+            BeverageCategory::Other(String::from("Drink")),
+            water_amount.trim().parse::<u32>().unwrap_or(0),
+            Some(hydration_percent.trim().parse::<u32>().unwrap_or(0)).clamp(Some(0), Some(100)),
+        )));
+    }
 }  
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub struct Drink {
+    pub date: NaiveTime,
+    pub beverage: Beverage,
+}
+
+impl Drink {
+    pub fn new(date: NaiveTime, beverage: Beverage) -> Self {
+        Self {
+            date,
+            beverage,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum BeverageCategory {
+    Water,
+    Coffee,
+    Tea,
+    Juice,
+    Soda,
+    EnergyDrink,
+    Alcohol,
+    Other(String),
+}
+
+impl Default for BeverageCategory {
+    fn default() -> Self {
+        BeverageCategory::Water
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub struct Beverage {
+    pub category: BeverageCategory,
+    pub name: String,
+    pub amount: u32,
+    pub hydration_amount: u32,
+}
+
+impl Beverage {
+    pub fn new(category: BeverageCategory, amount: u32, hydration_percent: Option<u32>) -> Self {
+        let (name, hydration_percent) = match &category {
+            BeverageCategory::Water => ("Water".to_string(), 100),
+            BeverageCategory::Coffee => ("Coffee".to_string(), 80),
+            BeverageCategory::Tea => ("Tea".to_string(), 90),
+            BeverageCategory::Juice => ("Juice".to_string(), 90),
+            BeverageCategory::Soda => ("Soda".to_string(), 60),
+            BeverageCategory::EnergyDrink => ("Energy Drink".to_string(), 50),
+            BeverageCategory::Alcohol => ("Alcohol".to_string(), 20),
+            BeverageCategory::Other(name) => (name.clone(), hydration_percent.unwrap()),
+        };
+
+        let hydration_amount = (amount / 100) * hydration_percent;
+
+        Self {
+            category,
+            name,
+            amount,
+            hydration_amount,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct States {
@@ -415,7 +502,7 @@ pub struct States {
     // pub selected_day_calory_ui: NaiveDate,
     pub strip_size: f32,
     pub calendar_mode_calory_ui: bool,
-    pub calory_add_clicked: bool,
+    pub macro_add_clicked: bool,
     pub calory_add_value: String,
     pub protein_add_value: String,
     pub carb_add_value: String,
@@ -423,6 +510,8 @@ pub struct States {
     pub alert_modal: bool,
     pub delete_was_positive: bool,
     pub water_add_clicked: bool,
+    pub water_add_value: String,
+    pub hydration_percent: String,
     // pub calories:u32,
     // pub proteins: u32,
     // pub carbs: u32,
@@ -441,7 +530,7 @@ impl States {
             // selected_day_calory_ui: Local::now().date_naive(),
             strip_size: 150.0,
             calendar_mode_calory_ui: true,
-            calory_add_clicked: false,
+            macro_add_clicked: false,
             calory_add_value: String::from("0"), 
             protein_add_value: String::from("0"),
             carb_add_value: String::from("0"),
@@ -449,6 +538,8 @@ impl States {
             alert_modal: false,
             delete_was_positive: false,
             water_add_clicked: false,
+            water_add_value: String::from("0"),
+            hydration_percent: String::from("0"),
             // calories: 0,
             // proteins: 0,
             // carbs: 0,
@@ -461,6 +552,11 @@ impl States {
         self.protein_add_value = String::from("0");
         self.carb_add_value = String::from("0");
         self.fat_add_value = String::from("0");
+    }
+
+    pub fn reset_water(&mut self) {
+        self.water_add_value = String::from("0");
+        self.hydration_percent = String::from("0");
     }
 }
 
@@ -492,8 +588,25 @@ impl Summary for MacroData {
             self.protein_registered = 0;
             self.carb_registered = 0;
             self.fat_registered = 0;
-            // println!("нет данных за выбранный день");
-            // MacroData::default()
+        }
+    }
+}
+
+impl Summary for WaterData {
+    fn summarize(&mut self, selected_day: Option<NaiveDate>) {
+        if let Some(drinks) = self.water_history.get(&selected_day.unwrap()) {
+            let mut drinked_amount: u32 = 0;
+            let mut hydrolized_amount: u32 = 0;
+            for drink in drinks{
+                drinked_amount += drink.beverage.amount;
+                hydrolized_amount += drink.beverage.hydration_amount;
+            }
+
+            self.water_registered = drinked_amount;
+            self.hydrolized = hydrolized_amount;
+        } else {
+            self.water_registered = 0;
+            self.hydrolized = 0;
         }
     }
 }
