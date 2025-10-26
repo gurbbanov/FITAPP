@@ -1971,7 +1971,9 @@ impl Gui<'_> {
                 });
 
             });
+    }
 
+    pub fn statistics_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
     }
             
     pub fn navigation_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
@@ -1988,13 +1990,12 @@ impl Gui<'_> {
         }
 
         match self.states.selected_tab {
-            // 0 => self.testing(ctx, frame, ui),
             0 => self.home(ctx, frame, ui, tint_color),
             // 1 => self.friends_ui(ctx, frame, ui),
             2 => self.workouts_ui(ctx, frame, ui, elements_color, tint_color),
             3 => self.calory_tracker_ui(ctx, frame, ui, elements_color, tint_color),
             4 => self.water_tracker_ui(ctx, frame, ui, elements_color, tint_color),
-            // 5 => self.statistics_ui(ctx, frame, ui),
+            5 => self.statistics_ui(ctx, frame, ui),
             _ => {ui.label("empty");},
         }
     }

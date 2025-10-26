@@ -518,15 +518,111 @@ pub fn workout_tracker_widget_behind(ctx: &egui::Context, frame: &mut eframe::Fr
     painter.add(Shape::convex_polygon(SD_right, muscle_color, border));
 
     //OUTER TRICEPS (OT)
-    let outer_triceps_width = 5.0 * scale;
-    let outer_triceps_height = 15.0 * scale;
+    let outer_triceps_width = 3.7 * scale;
+    let outer_triceps_height = 17.0 * scale;
 
     let OT_left_top_l = Pos2::new(SD_left_bot_l.x, SD_left_bot_l.y + offset);
-    let OT_right_top_l = Pos2::new(OT_left_top_l.x + outer_triceps_width, OT_left_top_l.y);
-    let OT_bot_l = Pos2::new(OT_left_top_l.x - 4.0 * scale, OT_left_top_l.y + outer_triceps_height);
-    let OT_left = vec![OT_left_top_l, OT_right_top_l, OT_bot_l];
+    let OT_right_top_l = Pos2::new(OT_left_top_l.x + outer_triceps_width, OT_left_top_l.y + offset);
+    let OT_right_bot_l = Pos2::new(OT_right_top_l.x - 10.5 * scale, OT_left_top_l.y + outer_triceps_height + 6.5 * scale);
+    let OT_left_bot_l = Pos2::new(OT_left_top_l.x - 9.7 * scale, OT_left_top_l.y + outer_triceps_height);
+    let OT_left = vec![OT_left_top_l, OT_right_top_l, OT_right_bot_l, OT_left_bot_l];
+
+    let OT_right_top_r = Pos2::new(SD_right_bot_r.x, SD_right_bot_r.y + offset);
+    let OT_left_top_r = Pos2::new(OT_right_top_r.x - outer_triceps_width, OT_right_top_r.y + offset);
+    let OT_left_bot_r = Pos2::new(OT_left_top_r.x + 10.5 * scale, OT_left_top_r.y + outer_triceps_height + 6.5 * scale);
+    let OT_right_bot_r = Pos2::new(OT_right_top_r.x + 9.7 * scale, OT_right_top_r.y + outer_triceps_height);
+    let OT_right = vec![OT_left_top_r, OT_right_top_r, OT_right_bot_r, OT_left_bot_r];
 
     painter.add(Shape::convex_polygon(OT_left, muscle_color, border));
+    painter.add(Shape::convex_polygon(OT_right, muscle_color, border));
+
+    //INNER TRICEPS (IT)
+    let inner_triceps_width = 4.0 * scale;
+    let inner_triceps_height = 24.0 * scale;
+
+    let IT_left_top_l = Pos2::new(OT_right_top_l.x + 3.0 * scale, OT_right_top_l.y + offset * 0.5);
+    let IT_right_top_l = Pos2::new(IT_left_top_l.x + inner_triceps_width, IT_left_top_l.y + 3.0 * scale);
+    let IT_right_bot_l = Pos2::new(IT_right_top_l.x, IT_right_top_l.y + inner_triceps_height - 5.0 * scale);
+    let IT_left_bot_l = Pos2::new(IT_left_top_l.x, IT_left_top_l.y + inner_triceps_height);
+    let IT_left = vec![IT_left_top_l, IT_right_top_l, IT_right_bot_l, IT_left_bot_l];
+
+    let IT_right_top_r = Pos2::new(OT_left_top_r.x - 3.0 * scale, OT_left_top_r.y + offset * 0.5 * scale);
+    let IT_left_top_r = Pos2::new(IT_right_top_r.x - inner_triceps_width, IT_right_top_r.y + 3.0 * scale);
+    let IT_left_bot_r = Pos2::new(IT_left_top_r.x, IT_left_top_r.y + inner_triceps_height - 5.0 * scale);
+    let IT_right_bot_r = Pos2::new(IT_right_top_r.x, IT_right_top_r.y + inner_triceps_height);
+    let IT_right= vec![IT_left_top_r, IT_right_top_r, IT_right_bot_r, IT_left_bot_r];
+
+    painter.add(Shape::convex_polygon(IT_left, muscle_color, border));
+    painter.add(Shape::convex_polygon(IT_right, muscle_color, border));
+
+    //MEDIAL TRICEPS (MT)
+    let medial_triceps_width = 7.0 * scale;
+    let medial_triceps_height = 23.4 * scale;
+
+    let MT_top_l = Pos2::new(SD_right_bot_l.x - offset, SD_right_bot_l.y + 3.5 * scale);
+    let MT_right_mid_l = Pos2::new(MT_top_l.x, MT_top_l.y + medial_triceps_height);
+    let MT_right_bot_l = Pos2::new(MT_right_mid_l.x - 3.0 * scale, MT_right_mid_l.y + 3.0 * scale);
+    let MT_left_bot_l = Pos2::new(MT_right_bot_l.x - medial_triceps_width, MT_right_bot_l.y - 2.0 * scale);
+    let MT_left_mid_l = Pos2::new(MT_left_bot_l.x, MT_left_bot_l.y - 4.0 * scale);
+    let MT_left = vec![MT_top_l, MT_right_mid_l, MT_right_bot_l, MT_left_bot_l, MT_left_mid_l];
+
+    let MT_top_r = Pos2::new(SD_left_bot_r.x + offset, SD_left_bot_r.y + 3.5 * scale);
+    let MT_left_mid_r = Pos2::new(MT_top_r.x, MT_top_r.y + medial_triceps_height);
+    let MT_left_bot_r = Pos2::new(MT_left_mid_r.x + 3.0 * scale, MT_left_mid_r.y + 3.0 * scale);
+    let MT_right_bot_r = Pos2::new(MT_left_bot_r.x + medial_triceps_width, MT_left_bot_r.y - 2.0 * scale);
+    let MT_right_mid_r = Pos2::new(MT_right_bot_r.x, MT_right_bot_r.y - 4.0 * scale);
+    let MT_right = vec![MT_top_r, MT_right_mid_r, MT_right_bot_r, MT_left_bot_r, MT_left_mid_r];
+
+    painter.add(Shape::convex_polygon(MT_left, muscle_color, border));
+    painter.add(Shape::convex_polygon(MT_right, muscle_color, border));
+    
+    //FOREARMS
+    let F_in_right_top_l = Pos2::new(MT_right_mid_l.x, MT_right_bot_l.y + offset * 2.0);
+    let F_in_med_l = Pos2::new(F_in_right_top_l.x + 2.0 * scale, F_in_right_top_l.y + 17.5 * scale);
+    let F_in_right_bot_l = Pos2::new(F_in_right_top_l.x, F_in_right_top_l.y + 35.0 * scale);
+    let F_in_left_bot_l = Pos2::new(F_in_right_bot_l.x - 5.0 * scale, F_in_right_bot_l.y);
+    let F_in_left_top_l = Pos2::new(F_in_left_bot_l.x, F_in_left_bot_l.y - 37.0 * scale);
+    let F_in_left = vec![F_in_right_top_l, F_in_med_l, F_in_right_bot_l, F_in_left_bot_l, F_in_left_top_l];
+
+    let F_out_left_top_l = Pos2::new(OT_right_bot_l.x, MT_left_bot_l.y + offset);
+    let F_out_right_top_l = Pos2::new(F_out_left_top_l.x + 5.0 * scale, F_out_left_top_l.y + offset);
+    let F_out_right_bot_l = Pos2::new(F_out_right_top_l.x, F_out_right_top_l.y + 37.0 * scale);
+    let F_out_left_bot_l = Pos2::new(F_out_right_bot_l.x - 2.0 * scale, F_out_right_bot_l.y);
+    let F_out_left = vec![F_out_left_top_l, F_out_right_top_l, F_out_right_bot_l, F_out_left_bot_l];
+
+    let F_in_left_top_r = Pos2::new(MT_left_mid_r.x, MT_left_bot_r.y + offset * 2.0);
+    let F_in_med_r = Pos2::new(F_in_left_top_r.x - 2.0 * scale, F_in_left_top_r.y + 17.5 * scale);
+    let F_in_left_bot_r = Pos2::new(F_in_left_top_r.x, F_in_left_top_r.y + 35.0 * scale);
+    let F_in_right_bot_r = Pos2::new(F_in_left_bot_r.x + 5.0 * scale, F_in_left_bot_r.y);
+    let F_in_right_top_r = Pos2::new(F_in_right_bot_r.x, F_in_right_bot_r.y - 37.0 * scale);
+    let F_in_right = vec![F_in_left_top_r, F_in_med_r, F_in_left_bot_r, F_in_right_bot_r, F_in_right_top_r];
+
+    let F_out_right_top_r = Pos2::new(OT_left_bot_r.x, MT_right_bot_r.y + offset);
+    let F_out_left_top_r = Pos2::new(F_out_right_top_r.x - 5.0 * scale, F_out_right_top_r.y + offset);
+    let F_out_left_bot_r = Pos2::new(F_out_left_top_r.x, F_out_left_top_r.y + 37.0 * scale);
+    let F_out_right_bot_r = Pos2::new(F_out_left_bot_r.x + 2.0 * scale, F_out_left_bot_r.y);
+    let F_out_right = vec![F_out_right_top_r, F_out_left_top_r, F_out_left_bot_r, F_out_right_bot_r];
+
+    painter.add(Shape::convex_polygon(F_in_left, muscle_color, border));
+    painter.add(Shape::convex_polygon(F_out_left, muscle_color, border));
+    painter.add(Shape::convex_polygon(F_in_right, muscle_color, border));
+    painter.add(Shape::convex_polygon(F_out_right, muscle_color, border));
+
+    //HAND
+    let H_left_top_l = Pos2::new(F_out_left_bot_l.x - 3.0 * scale, F_out_left_bot_l.y + offset);
+    let H_right_top_l = Pos2::new(F_in_right_bot_l.x + 3.0 * scale, F_in_right_bot_l.y + offset);
+    let H_right_bot_l = Pos2::new(H_right_top_l.x, H_right_top_l.y + 10.0 * scale);
+    let H_left_bot_l = Pos2::new(H_left_top_l.x, H_right_bot_l.y);
+    let H_left = vec![H_left_top_l, H_right_top_l, H_right_bot_l, H_left_bot_l];
+
+    let H_left_top_r = Pos2::new(F_in_left_bot_r.x - 3.0 * scale, F_in_left_bot_r.y + offset);
+    let H_right_top_r = Pos2::new(F_out_right_bot_r.x + 3.0 * scale, F_out_right_bot_r.y + offset);
+    let H_right_bot_r = Pos2::new(H_right_top_r.x, H_right_top_r.y + 10.0 * scale);
+    let H_left_bot_r = Pos2::new(H_left_top_r.x, H_right_bot_r.y);
+    let H_right = vec![H_left_top_r, H_right_top_r, H_right_bot_r, H_left_bot_r];
+
+    painter.add(Shape::convex_polygon(H_left, muscle_color, border));
+    painter.add(Shape::convex_polygon(H_right, muscle_color, border));
 
     //LATS
     let lats_height = 60.0 * scale;

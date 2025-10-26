@@ -522,7 +522,7 @@ impl States {
     pub fn default() -> Self {
         Self {
             calory_add_modal: false,
-            selected_tab: 4,
+            selected_tab: 0,
             skip_days: 0,
             // selected_day: OffsetDateTime::now_local().unwrap(),
             selected_day: Local::now().date_naive(),
