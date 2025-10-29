@@ -252,24 +252,20 @@ pub struct WorkoutPlannedData {
 impl WorkoutPlannedData {
     pub fn default() -> Self {
         Self {
-            workouts: HashMap::from([]),
-// (NaiveDate::from_ymd(2025, 9,27), vec![WorkoutPlanned::new(WorkoutTemplate::default(), NaiveDate::from_ymd(2025, 9, 21))])
+            workouts: HashMap::from([
+            (NaiveDate::from_ymd(2025, 10,29), vec![WorkoutPlanned::new(WorkoutTemplate::default(), NaiveDate::from_ymd(2025, 10, 29))])]),
         }
     }
 
     pub fn add_workout(&mut self, date: NaiveDate, workout: WorkoutPlanned) -> Result<(), String> {
-        self.workouts.insert(date, vec![workout]);
+        self.workouts.entry(date).or_default().push(workout);
         Ok(())
     }
 
-    pub fn remove_workout(&mut self, data: NaiveDate, workout: WorkoutPlanned) -> Result<(), String> {
-        if let Some(workouts) = self.workouts.get_mut(&data) {
-            if let Some(index) = workouts.iter().position(|w| w.date == data) {
-                workouts.remove(index);
-                Ok(())
-            } else {
-                Err("no such date".to_string())
-            }
+    pub fn remove_workout(&mut self, data: NaiveDate, index: usize) -> Result<(), String> {
+        if let workouts = self.workouts.get_mut(&data).unwrap() {
+            workouts.remove(index);
+            Ok(())
         } else {
             Err("no such date".to_string())
         }
@@ -512,6 +508,9 @@ pub struct States {
     pub water_add_clicked: bool,
     pub water_add_value: String,
     pub hydration_percent: String,
+    // pub scroll_offset: f32,
+    // pub velocity: f32,
+    // pub dragging: bool,
     // pub calories:u32,
     // pub proteins: u32,
     // pub carbs: u32,
@@ -522,7 +521,7 @@ impl States {
     pub fn default() -> Self {
         Self {
             calory_add_modal: false,
-            selected_tab: 0,
+            selected_tab: 2,
             skip_days: 0,
             // selected_day: OffsetDateTime::now_local().unwrap(),
             selected_day: Local::now().date_naive(),
@@ -540,6 +539,9 @@ impl States {
             water_add_clicked: false,
             water_add_value: String::from("0"),
             hydration_percent: String::from("0"),
+            // scroll_offset: 0.0,
+            // velocity: 0.0,
+            // dragging: false,
             // calories: 0,
             // proteins: 0,
             // carbs: 0,

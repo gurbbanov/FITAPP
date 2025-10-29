@@ -1,11 +1,11 @@
 use egui::{CornerRadius, TextEdit};
-use egui::{Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style, CursorIcon, Sense};
+use egui::{Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style, CursorIcon, Sense, Id};
 use eframe::{Frame};
 use egui_extras::{Size, Strip, StripBuilder};
 use time::{OffsetDateTime};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate};
 
-use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutTemplate};
+use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutPlannedData, WorkoutTemplate};
 use crate::muscles::{workout_tracker_widget_front, workout_tracker_widget_behind};
 use crate::tools::weekday_iso;
 
@@ -301,40 +301,47 @@ impl Gui<'_> {
                     ScrollArea::vertical()
                         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
                         .show(ui, |ui| {
-                            let side_rect =egui::Rect::from_min_size(
-                                // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
-                                ctx.screen_rect().left_top() + vec2(50.0, 125.0),
-                                egui::vec2(ui.available_width() - 100.0, 600.0),
+                            let side_rect = egui::Rect::from_min_size(
+                            ctx.screen_rect().left_top() + vec2(50.0, 125.0),
+                            egui::vec2(ui.available_width() - 100.0, 600.0),
                             );
 
-                            let id = egui::Id::new("drag_x_rect");
+                            let rect_height = side_rect.height();
+                            let spacing = 35.0;
 
+                            let id = Id::new("scroll_pos");
                             let mut pos = ctx.data(|data| {
                                 data.get_temp::<Pos2>(id).unwrap_or(side_rect.left_top())
                             });
 
                             let response = ui.allocate_rect(side_rect, egui::Sense::drag());
-
-                            if self.datas.planned_workout_data.workouts.contains_key(&self.states.selected_day) {
+                            let dt = ctx.input(|i| i.stable_dt);
+                            let speed = 600.0;
+                            if self.datas.planned_workout_data.workouts.contains_key(&self.states.selected_day) && !self.datas.planned_workout_data.workouts.get(&self.states.selected_day).expect("workout data error").is_empty() {
                                 ui.vertical_centered(|ui| {
                                     if response.dragged() {
                                         let delta = response.drag_delta();
-                                        pos.y += delta.y; 
-
+                                        pos.y += delta.y;
                                         ctx.data_mut(|data| {
                                             data.insert_temp(id, pos);
                                         });
-                                    } else if pos.y > ctx.screen_rect().center().y - side_rect.height() / 1.85 {
-                                        // while pos.y > ctx.screen_rect().center().y - side_rect.height() / 1.9 {
-                                        //     pos.y -= 0.1;
-                                        // }
+                                    } else {
+                                        let mut closest_index = 0;
+                                        let mut closest_dist = f32::MAX;
+                                        let screen_center_y = ctx.screen_rect().center().y - 25.0;
 
-                                        // pos.y = ctx.screen_rect().center().y - side_rect.height() / 1.9;
-                                        let side_height = side_rect.height();
-                                        let target_y = ctx.screen_rect().center().y - side_height / 1.85;
+                                        for i in 0..self.datas.planned_workout_data.workouts.get(&self.states.selected_day).unwrap().len() + 1 {
+                                            let offset_y = i as f32 * (rect_height + spacing);
+                                            let rect_center_y = pos.y + offset_y + rect_height / 2.0;
+                                            let dist = (rect_center_y - screen_center_y).abs();
 
-                                        let dt = ctx.input(|i| i.stable_dt);
-                                        let speed = 600.0; // пикселей в секунду
+                                            if dist < closest_dist {
+                                                closest_dist = dist;
+                                                closest_index = i;
+                                            }
+                                        }
+
+                                        let target_y = screen_center_y - closest_index as f32 * (rect_height + spacing) - rect_height / 2.0;
 
                                         let dy = target_y - pos.y;
                                         let step = speed * dt;
@@ -342,68 +349,70 @@ impl Gui<'_> {
                                         if dy.abs() > 0.5 {
                                             if dy.abs() > step {
                                                 pos.y += step * dy.signum();
-                                                ctx.request_repaint(); 
+                                                ctx.request_repaint();
                                             } else {
                                                 pos.y = target_y;
                                             }
+                                            ctx.data_mut(|data| {
+                                                data.insert_temp(id, pos);
+                                            });
                                         }
-                                        
-                                        ctx.data_mut(|data| {
-                                            data.insert_temp(id, pos);
-                                        });
-                                    } 
+                                    }
 
-                                    ui.painter().rect_filled(
-                                        Rect::from_min_size(pos, vec2(ui.available_width() - 100.0, 600.0)), 
-                                        egui::epaint::Rounding {
-                                            nw: 24,
-                                            ne: 24,
-                                            sw: 24,
-                                            se: 24,
-                                        },
-                                        elements_color,
-                                    );
+                                    for i in 0..self.datas.planned_workout_data.workouts.get(&self.states.selected_day).unwrap().len() + 1 {
+                                        let offset_y = i as f32 * (rect_height + spacing);
+                                        let rect_pos = pos + vec2(0.0, offset_y);
 
-                                    // self.draw_workout_card(ctx, frame, ui, pos, side_rect, self.datas.planned_workout_data[0].template.clone());
-                                    self.draw_workout_card(ctx, frame, ui, pos, side_rect, self.states.selected_day.clone());
+                                        let rect = Rect::from_min_size(rect_pos, vec2(ui.available_width() - 100.0, rect_height));
 
-                                    let bot_rect =egui::Rect::from_min_size(
-                                        // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
-                                        side_rect.left_bottom() + vec2(0.0, 50.0),
-                                        egui::vec2(side_rect.width(), side_rect.height()),
-                                    );
+                                        let screen_center_y = ctx.screen_rect().center().y;
+                                        let dist_to_center = (rect.center().y - screen_center_y).abs();
+                                        let intensity = (1.0 - (dist_to_center / 800.0)).clamp(0.0, 1.0) * 0.4; // 0.4 = сила свечения
 
-                                    ui.painter().rect_filled(
-                                        Rect::from_min_size(pos + vec2(0.0, side_rect.height() + 50.0), vec2(bot_rect.width(), bot_rect.height())), 
-                                        egui::epaint::Rounding {
-                                            nw: 24,
-                                            ne: 24,
-                                            sw: 24,
-                                            se: 24,
-                                        },
-                                        elements_color,
-                                    );
+                                        let [r, g, b, _] = elements_color.to_array();
+                                        let brightness = 0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32;
+        
+                                        let color = {
+                                            if brightness < 128.0 {
+                                                Color32::from_rgb(
+                                                    (r as f32 * (0.95 - intensity)).max(0.0) as u8,
+                                                    (g as f32 * (0.95 - intensity)).max(0.0) as u8,
+                                                    (b as f32 * (0.95 - intensity)).max(0.0) as u8,
+                                                )
+                                            } else {
+                                                Color32::from_rgb(
+                                                    (r as f32 + (255.0 - r as f32) * intensity).min(255.0) as u8,
+                                                    (g as f32 + (255.0 - g as f32) * intensity).min(255.0) as u8,
+                                                    (b as f32 + (255.0 - b as f32) * intensity).min(255.0) as u8,
+                                                )
+                                            }
+                                        };
 
-                                    ui.allocate_ui_at_rect(Rect::from_min_size(pos + vec2(0.0, side_rect.height() + 50.0), vec2(side_rect.width(), side_rect.height())),|ui| {
-                                        ui.vertical_centered(|ui| {
-                                            ui.add_space(70.0);
-                                            ui.add(Label::new(RichText::new("add more workout").size(30.0)).selectable(false));
-                                            ui.add_space(150.0);
-                                            ui.add_sized(vec2(100.0, 100.0), Image::new(self.medias.plus.clone()));
-                                            ui.add_space(160.0);
+                                        Self::draw_rect_with_black_shadow(ui.painter(), rect, 24, color, 3.0, 3.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding::same(24));
 
-                                            if (ui.add(
-                                                Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
-                                                    //     egui::Color32::from_rgb(91, 0, 113),
-                                                    .fill(Color32::from_rgb(0, 75, 141)) 
-                                                    .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
-                                                    .rounding(10),
-                                                // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), 
-                                            )).clicked() {
-                                                self.datas.planned_workout_data.add_workout(self.states.selected_day, WorkoutPlanned::leg_day(self.states.selected_day));
-                                            };
-                                        });
-                                    });
+                                        if i != self.datas.planned_workout_data.workouts.get(&self.states.selected_day).unwrap().len() {
+                                            self.draw_workout_card(ctx, frame, ui, rect_pos, rect, self.states.selected_day, i);
+                                        } else {
+                                            ui.allocate_ui_at_rect(Rect::from_min_size(rect_pos, vec2(ui.available_width() - 100.0, 600.0)),|ui| {
+                                                ui.vertical_centered(|ui| {
+                                                    ui.add_space(70.0);
+                                                    ui.add(Label::new(RichText::new("add more workout").size(30.0)).selectable(false));
+                                                    ui.add_space(150.0);
+                                                    ui.add_sized(vec2(100.0, 100.0), Image::new(self.medias.plus.clone()));
+                                                    ui.add_space(160.0);
+
+                                                    if (ui.add(
+                                                        Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
+                                                            .fill(Color32::from_rgb(0, 75, 141)) 
+                                                            .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
+                                                            .rounding(10),
+                                                    )).clicked() {
+                                                        self.datas.planned_workout_data.add_workout(self.states.selected_day, WorkoutPlanned::leg_day(self.states.selected_day));
+                                                    };
+                                                });
+                                            });
+                                        }
+                                    }
                                 });
                             } else {
                                 if response.dragged() {
@@ -462,10 +471,10 @@ impl Gui<'_> {
                                         ui.add(
                                             Button::new(RichText::new("rest").size(22.0).color(Color32::WHITE))
                                                 //     egui::Color32::from_rgb(91, 0, 113),
-                                                .fill(Color32::from_rgb(91, 0, 113)) // цвет фона кнопки
+                                                .fill(Color32::from_rgb(91, 0, 113)) 
                                                 .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                 .rounding(10),
-                                                // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), // рамка
+                                                // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), 
                                         );
                                     
                                         let padding = side_rect.width() - (((side_rect.width() / 13.0) * 2.0) + ((side_rect.width() / 2.5) * 2.0)) - 8.0;
@@ -473,58 +482,15 @@ impl Gui<'_> {
                                     
                                         if (ui.add(
                                             Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
-                                                //     egui::Color32::from_rgb(91, 0, 113),
                                                 .fill(Color32::from_rgb(0, 75, 141)) 
                                                 .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                 .rounding(10),
-                                            // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), 
                                         )).clicked() {
                                             self.datas.planned_workout_data.add_workout(self.states.selected_day, WorkoutPlanned::leg_day(self.states.selected_day));
                                         };
                                     });
                                 });
                             };
-
-                            // let bot_rect =egui::Rect::from_min_size(
-                            //     // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
-                            //     side_rect.left_bottom() + vec2(0.0, 50.0),
-                            //     egui::vec2(side_rect.width(), side_rect.height()),
-                            // );
-
-                            // ui.vertical_centered(|ui| {
-                            //     let id = egui::Id::new("drag_x+1_rect");
-
-                            //     let mut pos = ctx.data(|data| {
-                            //         data.get_temp::<Pos2>(id).unwrap_or(bot_rect.left_bottom())
-                            //     });
-
-                            //     let response = ui.allocate_rect(bot_rect, egui::Sense::drag());
-
-                            //     if response.dragged() {
-                            //         let delta = response.drag_delta();
-                            //         pos.y += delta.y; 
-
-                            //         ctx.data_mut(|data| {
-                            //             data.insert_temp(id, pos);
-                            //         });
-                            //     }
-                                    
-                            //         // ctx.data_mut(|data| {
-                            //         //     data.insert_temp(id, pos);
-                            //         // });
-
-                            //     ui.painter().rect_filled(
-                            //         Rect::from_min_size(pos, vec2(bot_rect.width(), bot_rect.height())), 
-                            //         egui::epaint::Rounding {
-                            //             nw: 24,
-                            //             ne: 24,
-                            //             sw: 24,
-                            //             se: 24,
-                            //         },
-                            //         elements_color,
-                            //     );
-                            // });
-
                         });
 
                         let top_rect = egui::Rect::from_min_size(
@@ -558,8 +524,6 @@ impl Gui<'_> {
                         ctx.screen_rect().right_bottom().to_vec2(),
                     );
 
-                    // let bot_rect = ui.available_rect_before_wrap();
-
                     Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 24, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
                         nw: 24,
                         ne: 24,
@@ -567,113 +531,7 @@ impl Gui<'_> {
                         se: 0,
                     });
 
-                    // StripBuilder::new(ui)
-                    //     .size(Size::remainder())
-                    //     // .size(Size::relative(0.08))
-                    //     // .size(Size::relative(0.8))
-                    //     // .size(Size::relative(0.1))
-                    //     .horizontal(|mut strip| {
-                            // strip.cell(|ui| {
-                            //     ui.with_layout(Layout::bottom_up(egui::Align::TOP), |ui| {
-                            //     // ui.with_layout(Layout::bottom_up(egui::Align::TOP), add_contents)
-                            //         ui.add_space(100.0);
-                            //         if self.states.skip_days >= 0 {
-                            //             if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.left_arrow.clone()).frame(false)).clicked() {
-                            //                 self.states.skip_days -= 7;
-                            //             };
-                            //         }
-                            //     });
-                            // });
-
-
-                    // strip.cell(|ui| {
                     self.draw_calendar(ui, bot_rect, now);
-                    // ui.allocate_ui_at_rect(bot_rect, |ui| {
-                    //     ui.vertical_centered_justified(|ui| {
-                    //         ui.add_space(REMAINDER);
-
-                    //         // let mut available_width = ui.available_width() * 0.8;
-                    //         let mut available_width = ui.available_width();
-                    //         ui.set_width(available_width);
-
-                    //         let rect_width = ui.available_width() / 10.0;
-
-                    //         let today = now.date_naive();
-                    //         let weekdays = ["mo", "tu", "we", "th", "fr", "sa", "su"];
-
-                    //         ui.horizontal(|ui| {
-                    //             ui.add_space(REMAINDER * 3.0);
-                    //             if self.states.skip_days >= 0 {
-                    //                 ui.vertical(|ui| {
-                    //                     ui.add_space(REMAINDER * 3.0);
-                    //                     if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.left_arrow.clone()).frame(false)).clicked() {
-                    //                         self.states.skip_days -= 7;
-                    //                     };
-                    //                 });
-                    //             } else {
-                    //                 ui.add_space(REMAINDER * 3.8) ;
-                    //             }
-
-                    //             for i in 0..7 {
-                    //                 let offset = i as i64 - today.weekday().num_days_from_monday() as i64 + self.states.skip_days as i64;
-                    //                 let date = now.date_naive() + Duration::days(offset);
-
-                    //                 ui.vertical(|ui| {
-
-                    //                     ui.add(Label::new(format!(" {}", weekdays[i])).selectable(false));
-
-                    //                     let is_today = date == today;
-                    //                     let is_selected = Some(date) == Some(self.states.selected_day);
-
-                    //                     if ui.add(
-                    //                         Button::new(
-                    //                             RichText::new(format!("{}", date.day()))
-                    //                                 .size(18.0)
-                    //                                 .color(Color32::WHITE),
-                    //                         )
-                    //                         .fill(
-                    //                             if is_today {
-                    //                                 Color32::from_rgb(0, 75, 142)
-                    //                             } else if is_selected {
-                    //                                 Color32::GRAY
-                    //                             } else {
-                    //                                 Color32::from_rgb(96, 96, 96)
-                    //                             },
-                    //                         )
-                    //                         .min_size(Vec2::new(rect_width, 60.0))
-                    //                         .rounding(8),
-                    //                     ).clicked() {
-                    //                         self.states.selected_day = date;
-                    //                         println!("selected: {:?}", self.states.selected_day);
-                    //                     }
-                    //                 });
-                    //             }
-
-                    //             if self.states.skip_days <= 0 {
-                    //                 ui.vertical(|ui| {
-                    //                     ui.add_space(REMAINDER * 3.0);
-                    //                     if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.right_arrow.clone()).frame(false)).clicked() {
-                    //                         self.states.skip_days += 7;
-                    //                     };
-                    //                     ui.add_space(REMAINDER * 4.0);
-                    //                 });
-                    //             } 
-                    //         });
-                    //     });
-                    // });
-                            // });
-
-                            // strip.cell(|ui| {
-                            //     ui.vertical_centered(|ui| {
-                            //         // ui.add_space(45.0);
-                            //         if self.states.skip_days <= 0 {
-                            //             if ui.add_sized([30.0, 30.0], ImageButton::new(self.medias.right_arrow.clone()).frame(false)).clicked() {
-                            //                 self.states.skip_days += 7;
-                            //             };
-                            //         }
-                            //     });
-                            // });
-                        // });
                 });
             });
     }
@@ -1446,19 +1304,19 @@ impl Gui<'_> {
                                                             ui.add_space(5.0);
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_space(5.0);
-                                                                ui.add(Label::new(RichText::new("COFFEE").size(17.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("COFFEE").size(17.0).color(text_color)));
                                                             });
 
                                                             ui.add_space(5.0);
                                                             
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
-                                                                ui.add(Label::new(RichText::new("25 ml").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("25 ml").size(15.0).color(text_color)));
                                                             });
 
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(18.0, 18.0), Image::new(self.medias.ml.clone()));
-                                                                ui.add(Label::new(RichText::new("250 ml").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("250 ml").size(15.0).color(text_color)));
                                                             });
                                                         })
                                                     });
@@ -1514,19 +1372,19 @@ impl Gui<'_> {
                                                             ui.add_space(5.0);
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_space(5.0);
-                                                                ui.add(Label::new(RichText::new("WATER").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("WATER").size(15.0).color(text_color)));
                                                             });
 
                                                             ui.add_space(5.0);
                                                             
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
-                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(text_color)));
                                                             });
 
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(18.0, 18.0), Image::new(self.medias.ml.clone()));
-                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(text_color)));
                                                             });
                                                         })
                                                     });
@@ -1582,19 +1440,19 @@ impl Gui<'_> {
                                                             ui.add_space(5.0);
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_space(5.0);
-                                                                ui.add(Label::new(RichText::new("WATER").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("WATER").size(15.0).color(text_color)));
                                                             });
 
                                                             ui.add_space(5.0);
                                                             
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
-                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(text_color)));
                                                             });
 
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(18.0, 18.0), Image::new(self.medias.ml.clone()));
-                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(Color32::WHITE)));
+                                                                ui.add(Label::new(RichText::new("500 ml").size(15.0).color(text_color)));
                                                             });
                                                         })
                                                     });
@@ -2127,7 +1985,7 @@ impl Gui<'_> {
         });
     }
 
-    fn draw_workout_card(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, pos: Pos2, side_rect: Rect, selected_day: NaiveDate) {
+    fn draw_workout_card(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, pos: Pos2, side_rect: Rect, selected_day: NaiveDate, index: usize) {
         ui.allocate_ui_at_rect(Rect::from_min_size(pos, vec2(ui.available_width() - 100.0, 600.0)),|ui| {
             // if !self.datas.planned_workout_data.workouts.contains_key(&selected_day) {
             //     ui.vertical_centered(|ui| {
@@ -2163,77 +2021,79 @@ impl Gui<'_> {
             //         };
             //     });
             // } else {
-            ui.vertical_centered(|ui| {
-                ui.add_space(20.0);
-                    ui.vertical_centered(|ui| {
-                        ui.add_space(30.0);
-                        ui.label(RichText::new(&self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[0].template.workout_name).size(27.0).strong());
-                        ui.add_space(50.0);
-                    
-                        ui.horizontal(|ui| {
-                            ui.vertical(|ui| {
-                                ui.set_width(side_rect.width() / 2.0);
-                                ui.vertical_centered(|ui| {
-                                    workout_tracker_widget_front(ctx, frame, ui, Vec2::new(110.0, 249.0));
+            if self.datas.planned_workout_data.workouts.get(&selected_day).unwrap().len() > index {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(20.0);
+                        ui.vertical_centered(|ui| {
+                            ui.add_space(30.0);
+                            ui.label(RichText::new(&self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[index].template.workout_name).size(27.0).strong());
+                            ui.add_space(50.0);
+                        
+                            ui.horizontal(|ui| {
+                                ui.vertical(|ui| {
+                                    ui.set_width(side_rect.width() / 2.0);
+                                    ui.vertical_centered(|ui| {
+                                        workout_tracker_widget_front(ctx, frame, ui, Vec2::new(110.0, 249.0));
+                                    });
+                                });
+                        
+                                ui.vertical(|ui| {
+                                    ui.set_width(side_rect.width() / 2.0);
+                                    ui.vertical_centered(|ui| {
+                                        workout_tracker_widget_behind(ctx, frame, ui, Vec2::new(110.0, 249.0));
+                                    });
                                 });
                             });
-                    
-                            ui.vertical(|ui| {
-                                ui.set_width(side_rect.width() / 2.0);
-                                ui.vertical_centered(|ui| {
-                                    workout_tracker_widget_behind(ctx, frame, ui, Vec2::new(110.0, 249.0));
-                                });
+                        
+                            ui.add_space(50.0);
+                        
+                            ui.add(
+                                Button::new(RichText::new("start").size(22.0).strong().color(Color32::WHITE))
+                                    .fill(Color32::from_rgb(21, 141, 0)) 
+                                    .min_size(Vec2::new(side_rect.width() / 4.0, 40.0))
+                                    .rounding(10),
+                            );
+                        
+                            ui.add_space(12.0);
+                        
+                            ui.horizontal(|ui| {
+                                let button_width = side_rect.width() / 4.0;
+                                let spacing = 6.0;
+                                let total_width = button_width * 3.0 + spacing * 2.0;
+                        
+                                let left_padding = (side_rect.width() - total_width) / 2.1;
+                                ui.add_space(left_padding);
+                        
+                                ui.add(
+                                    Button::new(RichText::new("change workout").size(15.0).strong().color(Color32::WHITE))
+                                        .fill(Color32::from_rgb(0, 75, 141))
+                                        .min_size(Vec2::new(button_width, 30.0))
+                                        .rounding(8),
+                                );
+                        
+                                ui.add_space(spacing);
+                        
+                                ui.add(
+                                    Button::new(RichText::new("rest").size(18.0).strong().color(Color32::WHITE))
+                                        .fill(Color32::from_rgb(91, 0, 113))
+                                        .min_size(Vec2::new(button_width, 30.0))
+                                        .rounding(8),
+                                );
+                        
+                                ui.add_space(spacing);
+                        
+                                if ui.add(
+                                    Button::new(RichText::new("skip").size(18.0).color(Color32::WHITE))
+                                        .fill(Color32::from_rgb(141, 0, 19))
+                                        .min_size(Vec2::new(button_width, 30.0))
+                                        .rounding(8),
+                                ).clicked() {
+                                    self.datas.planned_workout_data.remove_workout(selected_day,  index);
+                                };
                             });
-                        });
-                    
-                        ui.add_space(50.0);
-                    
-                        ui.add(
-                            Button::new(RichText::new("start").size(22.0).strong().color(Color32::WHITE))
-                                .fill(Color32::from_rgb(21, 141, 0)) 
-                                .min_size(Vec2::new(side_rect.width() / 4.0, 40.0))
-                                .rounding(10),
-                        );
-                    
-                        ui.add_space(12.0);
-                    
-                        ui.horizontal(|ui| {
-                            let button_width = side_rect.width() / 4.0;
-                            let spacing = 6.0;
-                            let total_width = button_width * 3.0 + spacing * 2.0;
-                    
-                            let left_padding = (side_rect.width() - total_width) / 2.1;
-                            ui.add_space(left_padding);
-                    
-                            ui.add(
-                                Button::new(RichText::new("change workout").size(15.0).strong().color(Color32::WHITE))
-                                    .fill(Color32::from_rgb(0, 75, 141))
-                                    .min_size(Vec2::new(button_width, 30.0))
-                                    .rounding(8),
-                            );
-                    
-                            ui.add_space(spacing);
-                    
-                            ui.add(
-                                Button::new(RichText::new("rest").size(18.0).strong().color(Color32::WHITE))
-                                    .fill(Color32::from_rgb(91, 0, 113))
-                                    .min_size(Vec2::new(button_width, 30.0))
-                                    .rounding(8),
-                            );
-                    
-                            ui.add_space(spacing);
-                    
-                            if ui.add(
-                                Button::new(RichText::new("skip").size(18.0).color(Color32::WHITE))
-                                    .fill(Color32::from_rgb(141, 0, 19))
-                                    .min_size(Vec2::new(button_width, 30.0))
-                                    .rounding(8),
-                            ).clicked() {
-                                println!("{:?}", self.datas.planned_workout_data.remove_workout(selected_day, self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[0].clone()));
-                            };
                         });
                     });
-                });
+                }
             });
     }
 
