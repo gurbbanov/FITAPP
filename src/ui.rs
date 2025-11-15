@@ -1,11 +1,11 @@
-use egui::{CornerRadius, TextEdit};
-use egui::{Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style, CursorIcon, Sense, Id};
 use eframe::{Frame};
+use egui::Window;
+use egui::{CornerRadius, TextEdit, Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style, CursorIcon, Sense, Id};
 use egui_extras::{Size, Strip, StripBuilder};
 use time::{OffsetDateTime};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate};
 
-use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutPlannedData, WorkoutTemplate};
+use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutPlannedData, WorkoutTemplate, Muscle, Exercise};
 use crate::muscles::{workout_tracker_widget_front, workout_tracker_widget_behind};
 use crate::tools::weekday_iso;
 
@@ -233,13 +233,13 @@ impl Gui<'_> {
                                         .horizontal(|mut strip| {
                                             strip.cell(|ui| {
                                                 ui.vertical_centered(|ui| {
-                                                    workout_tracker_widget_front(ctx, frame, ui, Vec2::new(100.0, 226.0));
+                                                    workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &vec![Exercise::Deadlift, Exercise::BenchPress]);
                                                 });
                                             });
 
                                             strip.cell(|ui| {
                                                 ui.vertical_centered(|ui| {
-                                                    workout_tracker_widget_behind(ctx, frame, ui, Vec2::new(100.0, 226.0));
+                                                    workout_tracker_widget_behind(ctx, ui, Vec2::new(100.0, 226.0), &vec![]);
                                                 });
                                             });
                                         })
@@ -270,25 +270,20 @@ impl Gui<'_> {
                 ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
             });
         });
-
-                                    // egui::Area::new("modal_blocker".into())
-                                    //     .order(egui::Order::Background)
-                                    //     .fixed_pos(screen_rect.min)
-                                    //     .show(ctx, |ui| {
-                                    //         let _response = ui.allocate_response(screen_rect.size(), Sense::click());
-                                    //     });
-
-                                    // let window_size = vec2(250.0, 70.0);
-
-                                    // egui::Window::new("warning")
-                                    //     .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
-                                    //     .fixed_size(window_size)
-                                    //     .collapsible(false)
-                                    //     .resizable(false)
-                                    //     .fade_in(true)
     }
 
-    pub fn workouts_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, elements_color: Color32, tint_color: Color32) {
+    pub fn workouts_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, elements_color: Color32, tint_color: Color32, is_dark: bool) {
+        let mut other_elements_color;
+        let mut text_color;
+
+        if is_dark {
+            other_elements_color = Color32::from_rgb(67, 67, 67);
+            text_color = Color32::WHITE;
+        } else {
+            other_elements_color = Color32::from_rgb(240, 240, 240);
+            text_color = Color32::BLACK;
+        }
+
         StripBuilder::new(ui)
             // .size(Size::exact(100.0))
             .size(Size::remainder())
@@ -317,7 +312,11 @@ impl Gui<'_> {
                             let response = ui.allocate_rect(side_rect, egui::Sense::drag());
                             let dt = ctx.input(|i| i.stable_dt);
                             let speed = 600.0;
-                            if self.datas.planned_workout_data.workouts.contains_key(&self.states.selected_day) && !self.datas.planned_workout_data.workouts.get(&self.states.selected_day).expect("workout data error").is_empty() {
+                            let workouts = &self.datas.planned_workout_data.workouts;
+
+                            //TODO improve logic
+                            if workouts.contains_key(&self.states.selected_day) && !workouts.get(&self.states.selected_day).expect("workout data error").is_empty() && workouts.get(&self.states.selected_day).unwrap()[0].template.workout_name != "rest" {
+                            // if self.datas.planned_workout_data.workouts.contains_key(&self.states.selected_day) && self.datas.planned_workout_data.workouts.get(&self.states.selected_day).unwrap()[0].template.workout_name != "rest" {
                                 ui.vertical_centered(|ui| {
                                     if response.dragged() {
                                         let delta = response.drag_delta();
@@ -367,7 +366,7 @@ impl Gui<'_> {
 
                                         let screen_center_y = ctx.screen_rect().center().y;
                                         let dist_to_center = (rect.center().y - screen_center_y).abs();
-                                        let intensity = (1.0 - (dist_to_center / 800.0)).clamp(0.0, 1.0) * 0.4; // 0.4 = сила свечения
+                                        let intensity = (1.0 - (dist_to_center / 800.0)).clamp(0.0, 1.0) * 0.4;
 
                                         let [r, g, b, _] = elements_color.to_array();
                                         let brightness = 0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32;
@@ -391,7 +390,7 @@ impl Gui<'_> {
                                         Self::draw_rect_with_black_shadow(ui.painter(), rect, 24, color, 3.0, 3.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding::same(24));
 
                                         if i != self.datas.planned_workout_data.workouts.get(&self.states.selected_day).unwrap().len() {
-                                            self.draw_workout_card(ctx, frame, ui, rect_pos, rect, self.states.selected_day, i);
+                                            self.draw_workout_card(ctx, frame, ui, rect_pos, rect, self.states.selected_day, i, is_dark, elements_color, other_elements_color, text_color);
                                         } else {
                                             ui.allocate_ui_at_rect(Rect::from_min_size(rect_pos, vec2(ui.available_width() - 100.0, 600.0)),|ui| {
                                                 ui.vertical_centered(|ui| {
@@ -407,8 +406,12 @@ impl Gui<'_> {
                                                             .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                             .rounding(10),
                                                     )).clicked() {
-                                                        self.datas.planned_workout_data.add_workout(self.states.selected_day, WorkoutPlanned::leg_day(self.states.selected_day));
-                                                    };
+                                                        self.states.templates_window = !self.states.templates_window;
+                                                    }
+
+                                                    if self.states.templates_window {
+                                                        self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                                                    }
                                                 });
                                             });
                                         }
@@ -457,41 +460,73 @@ impl Gui<'_> {
                                 );
 
                                 ui.allocate_ui_at_rect(Rect::from_min_size(pos, vec2(side_rect.width(), side_rect.height())),|ui| {
-                                    ui.vertical_centered(|ui| {
-                                        ui.add_space(70.0);
-                                        ui.add(Label::new(RichText::new("not planned").size(30.0)).selectable(false));
-                                        ui.add_space(40.0);
-                                        ui.add_sized(vec2(250.0,250.0), Image::new(self.medias.calendar.clone()));
-                                        ui.add_space(120.0);
-                                    });
+                                    if !self.datas.planned_workout_data.workouts.contains_key(&self.states.selected_day) || self.datas.planned_workout_data.workouts.get(&self.states.selected_day).unwrap().is_empty() {
+                                        ui.vertical_centered(|ui| {
+                                            ui.add_space(70.0);
+                                            ui.add(Label::new(RichText::new("not planned").size(30.0)).selectable(false));
+                                            ui.add_space(40.0);
+                                            ui.add_sized(vec2(250.0,250.0), Image::new(self.medias.calendar.clone()));
+                                            ui.add_space(120.0);
+                                        });
 
-                                    ui.horizontal(|ui| {
-                                        ui.add_space(side_rect.width() / 13.0);
-                                    
-                                        ui.add(
-                                            Button::new(RichText::new("rest").size(22.0).color(Color32::WHITE))
-                                                //     egui::Color32::from_rgb(91, 0, 113),
-                                                .fill(Color32::from_rgb(91, 0, 113)) 
-                                                .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
-                                                .rounding(10),
-                                                // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), 
-                                        );
-                                    
-                                        let padding = side_rect.width() - (((side_rect.width() / 13.0) * 2.0) + ((side_rect.width() / 2.5) * 2.0)) - 8.0;
-                                        ui.add_space(padding);
-                                    
-                                        if (ui.add(
-                                            Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
-                                                .fill(Color32::from_rgb(0, 75, 141)) 
-                                                .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
-                                                .rounding(10),
-                                        )).clicked() {
-                                            self.datas.planned_workout_data.add_workout(self.states.selected_day, WorkoutPlanned::leg_day(self.states.selected_day));
-                                        };
-                                    });
+                                        ui.horizontal(|ui| {
+                                            ui.add_space(side_rect.width() / 13.0);
+                                        
+                                            if ui.add(
+                                                Button::new(RichText::new("rest").size(22.0).color(Color32::WHITE))
+                                                    .fill(Color32::from_rgb(91, 0, 113)) 
+                                                    .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
+                                                    .rounding(10),
+                                            ).clicked() {
+                                                self.datas.planned_workout_data.rest(self.states.selected_day);
+                                            };
+                                        
+                                            let padding = side_rect.width() - (((side_rect.width() / 13.0) * 2.0) + ((side_rect.width() / 2.5) * 2.0)) - 8.0;
+                                            ui.add_space(padding);
+                                        
+                                            if (ui.add(
+                                                Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
+                                                    .fill(Color32::from_rgb(0, 75, 141)) 
+                                                    .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
+                                                    .rounding(10),
+                                            )).clicked() {
+                                                self.states.templates_window = !self.states.templates_window;
+                                            }
+
+                                            if self.states.templates_window {
+                                                self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                                            }
+                                        });
+                                    } else {
+                                        ui.vertical_centered(|ui| {
+                                            ui.add_space(70.0);
+                                            ui.add(Label::new(RichText::new("rest").size(30.0)).selectable(false));
+                                            ui.add_space(40.0);
+                                            // ui.add_space(250.0);
+                                            ui.add_sized(vec2(250.0,250.0), Image::new(self.medias.bed.clone()));
+                                            ui.add_space(120.0);
+
+                                            if (ui.add(
+                                                Button::new(RichText::new("change workout").size(22.0).color(Color32::WHITE))
+                                                    .fill(Color32::from_rgb(0, 75, 141)) 
+                                                    .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
+                                                    .rounding(10),
+                                            )).clicked() {
+                                                self.states.templates_window = !self.states.templates_window;
+                                            }
+
+                                            if self.states.templates_window {
+                                                self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                                            }
+                                        });
+                                    }
                                 });
                             };
                         });
+
+                        if self.states.alert_modal {
+                            self.draw_alert_window(ui, ctx, is_dark, "are sure to remove workout?", "remove");
+                        }
 
                         let top_rect = egui::Rect::from_min_size(
                             ctx.screen_rect().left_top(),
@@ -507,14 +542,64 @@ impl Gui<'_> {
 
                         ui.allocate_ui_at_rect(top_rect, |ui| {
                             ui.vertical_centered(|ui| {
-                                ui.add_space(20.0);
-                                ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%B"), self.states.selected_day.format("%d"))).size(25.0).strong()).selectable(false));
-                                ui.add(Label::new(RichText::new(format!("{}", self.states.selected_day.format("%A"))).size(15.0).strong()).selectable(false));
+                                StripBuilder::new(ui)
+                                    .size(Size::relative(0.3))
+                                    .size(Size::remainder())
+                                    .size(Size::relative(0.3))
+                                    .horizontal(|mut strip| {
+                                        strip.cell(|ui | {
+                                            ui.horizontal_centered(|ui| {
+                                                ui.add_space(30.0);
+                                                if ui.add(Button::image_and_text(self.medias.workout_templates.clone(), RichText::new("templates").size(13.0).strong().color(text_color))
+                                                    .fill(other_elements_color)
+                                                    .min_size(Vec2::new(75.0, 30.0))
+                                                    .rounding(5.0),
+                                                ).clicked() {
+                                                    self.states.templates_window = !self.states.templates_window;
+                                                    self.states.editable != self.states.editable;
+                                                }
+
+                                                if self.states.templates_window {
+                                                    self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                                                }
+                                            });
+                                        });
+
+                                        strip.cell(|ui| {
+                                            ui.vertical_centered(|ui| {
+                                                ui.add_space(20.0);
+                                                ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%B"), self.states.selected_day.format("%d"))).size(25.0).strong()).selectable(false));
+                                                ui.add(Label::new(RichText::new(format!("{}", self.states.selected_day.format("%A"))).size(15.0).strong()).selectable(false));
+                                            });
+                                        });
+
+                                        strip.cell(|ui| {
+                                            ui.horizontal_centered(|ui| {
+                                                ui.add_space(50.0);
+                                                ui.add(Button::image_and_text(self.medias.workouts.clone(), RichText::new("exercises").size(13.0).strong().color(text_color))
+                                                    .fill(other_elements_color)
+                                                    .min_size(Vec2::new(75.0, 30.0))
+                                                    .rounding(5.0),)
+                                                });
+                                        });
+                                    });
                             });
                         });
 
-                        ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
-                            ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+
+                        let screen_rect = ctx.screen_rect();
+                        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
+
+                        ui.allocate_ui_at_rect(screen_rect, |ui| {
+                            if self.states.alert_modal {
+                                ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                                    ui.add(Image::new(self.medias.ambient_red.clone()).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                                });
+                            } else {
+                                ui.with_layout(Layout::centered_and_justified(egui::Direction::TopDown), |ui| {
+                                    ui.add(Image::new(self.medias.ambient_blue.clone()).tint(tint_color).fit_to_exact_size(vec2(ui.available_width(), ui.available_height() * 1.5)));
+                                });
+                            }
                         });
                     });
 
@@ -816,80 +901,7 @@ impl Gui<'_> {
                                 });
 
                                 if self.states.alert_modal {
-                                    let screen_rect = ctx.screen_rect();
-                                    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
-
-                                    ui.painter().rect_filled(
-                                        screen_rect,
-                                        0.0,
-                                        if is_dark {
-                                            egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
-                                        } else {
-                                            egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
-                                        }
-                                    );
-
-                                    egui::Area::new("modal_blocker".into())
-                                        .order(egui::Order::Background)
-                                        .fixed_pos(screen_rect.min)
-                                        .show(ctx, |ui| {
-                                            let _response = ui.allocate_response(screen_rect.size(), Sense::click());
-                                        });
-
-                                    let window_size = vec2(250.0, 70.0);
-
-                                    egui::Window::new("warning")
-                                        .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
-                                        .fixed_size(window_size)
-                                        .collapsible(false)
-                                        .resizable(false)
-                                        .show(ctx, |ui| {
-                                            ui.vertical_centered(|ui| {
-                                                ui.add(Label::new(RichText::new("are you sure to delete meal?").size(18.0)));
-                                            });
-
-                                            ui.add_space(REMAINDER);
-
-                                            StripBuilder::new(ui)
-                                                .size(Size::relative(0.5))
-                                                .size(Size::relative(0.5))
-                                                .horizontal(|mut strip| {
-                                                    strip.cell(|ui| {
-                                                        ui.vertical_centered(|ui| {
-                                                            if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE)) 
-                                                                // .fill(Color32::GRAY)
-                                                                .fill(Color32::from_rgb(96, 96, 96))
-                                                                .min_size(ui.available_rect_before_wrap().size())
-                                                                .rounding(egui::epaint::Rounding {
-                                                                    nw: 0,
-                                                                    ne: 0,
-                                                                    sw: 9,
-                                                                    se: 0,
-                                                                })).clicked() {
-                                                                    self.states.alert_modal = !self.states.alert_modal;
-                                                                }
-                                                        });
-                                                    });
-
-                                                    strip.cell(|ui| {
-                                                        ui.vertical_centered(|ui| {
-                                                            if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
-                                                                .fill(Color32::from_rgb(140, 0, 0)) 
-                                                                // .min_size(Vec2::new(65.0, 25.0))
-                                                                .min_size(ui.available_rect_before_wrap().size())
-                                                                .rounding(egui::epaint::Rounding {
-                                                                    nw: 0,
-                                                                    ne: 0,
-                                                                    sw: 0,
-                                                                    se: 9,
-                                                                })).clicked() {
-                                                                    self.states.delete_was_positive = true;
-                                                                    self.states.alert_modal = !self.states.alert_modal;
-                                                                }
-                                                        });
-                                                    });
-                                                });
-                                        });
+                                    self.draw_alert_window(ui, ctx, is_dark, "are you sure to delete meal?", "delete");
                                 }
                             });
                         });
@@ -1566,80 +1578,7 @@ impl Gui<'_> {
                             });
 
                             if self.states.alert_modal {
-                                let screen_rect = ctx.screen_rect();
-                                let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
-
-                                ui.painter().rect_filled(
-                                    screen_rect,
-                                    0.0,
-                                    if is_dark {
-                                        egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
-                                    } else {
-                                        egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
-                                    }
-                                );
-
-                                egui::Area::new("modal_blocker".into())
-                                    .order(egui::Order::Background)
-                                    .fixed_pos(screen_rect.min)
-                                    .show(ctx, |ui| {
-                                        let _response = ui.allocate_response(screen_rect.size(), Sense::click());
-                                    });
-
-                                let window_size = vec2(250.0, 70.0);
-
-                                egui::Window::new("warning")
-                                    .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
-                                    .fixed_size(window_size)
-                                    .collapsible(false)
-                                    .resizable(false)
-                                    .show(ctx, |ui| {
-                                        ui.vertical_centered(|ui| {
-                                            ui.add(Label::new(RichText::new("are you sure to delete drink?").size(18.0)));
-                                        });
-
-                                        ui.add_space(REMAINDER);
-
-                                        StripBuilder::new(ui)
-                                            .size(Size::relative(0.5))
-                                            .size(Size::relative(0.5))
-                                            .horizontal(|mut strip| {
-                                                strip.cell(|ui| {
-                                                    ui.vertical_centered(|ui| {
-                                                        if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE)) 
-                                                            // .fill(Color32::GRAY)
-                                                            .fill(Color32::from_rgb(96, 96, 96))
-                                                            .min_size(ui.available_rect_before_wrap().size())
-                                                            .rounding(egui::epaint::Rounding {
-                                                                nw: 0,
-                                                                ne: 0,
-                                                                sw: 9,
-                                                                se: 0,
-                                                            })).clicked() {
-                                                                self.states.alert_modal = !self.states.alert_modal;
-                                                            }
-                                                    });
-                                                });
-
-                                                strip.cell(|ui| {
-                                                    ui.vertical_centered(|ui| {
-                                                        if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
-                                                            .fill(Color32::from_rgb(140, 0, 0)) 
-                                                            // .min_size(Vec2::new(65.0, 25.0))
-                                                            .min_size(ui.available_rect_before_wrap().size())
-                                                            .rounding(egui::epaint::Rounding {
-                                                                nw: 0,
-                                                                ne: 0,
-                                                                sw: 0,
-                                                                se: 9,
-                                                            })).clicked() {
-                                                                self.states.delete_was_positive = true;
-                                                                self.states.alert_modal = !self.states.alert_modal;
-                                                            }
-                                                    });
-                                                });
-                                            });
-                                    });
+                                self.draw_alert_window(ui, ctx, is_dark, "are sure to delete water?", "delete");
                             }
                     });
 
@@ -1850,7 +1789,7 @@ impl Gui<'_> {
         match self.states.selected_tab {
             0 => self.home(ctx, frame, ui, tint_color),
             // 1 => self.friends_ui(ctx, frame, ui),
-            2 => self.workouts_ui(ctx, frame, ui, elements_color, tint_color),
+            2 => self.workouts_ui(ctx, frame, ui, elements_color, tint_color, is_dark),
             3 => self.calory_tracker_ui(ctx, frame, ui, elements_color, tint_color),
             4 => self.water_tracker_ui(ctx, frame, ui, elements_color, tint_color),
             5 => self.statistics_ui(ctx, frame, ui),
@@ -1985,7 +1924,7 @@ impl Gui<'_> {
         });
     }
 
-    fn draw_workout_card(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, pos: Pos2, side_rect: Rect, selected_day: NaiveDate, index: usize) {
+    fn draw_workout_card(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, pos: Pos2, side_rect: Rect, selected_day: NaiveDate, index: usize, is_dark: bool, elements_color: Color32, other_elements_color: Color32, text_color: Color32) {
         ui.allocate_ui_at_rect(Rect::from_min_size(pos, vec2(ui.available_width() - 100.0, 600.0)),|ui| {
             // if !self.datas.planned_workout_data.workouts.contains_key(&selected_day) {
             //     ui.vertical_centered(|ui| {
@@ -2021,6 +1960,7 @@ impl Gui<'_> {
             //         };
             //     });
             // } else {
+
             if self.datas.planned_workout_data.workouts.get(&selected_day).unwrap().len() > index {
                 ui.vertical_centered(|ui| {
                     ui.add_space(20.0);
@@ -2033,14 +1973,14 @@ impl Gui<'_> {
                                 ui.vertical(|ui| {
                                     ui.set_width(side_rect.width() / 2.0);
                                     ui.vertical_centered(|ui| {
-                                        workout_tracker_widget_front(ctx, frame, ui, Vec2::new(110.0, 249.0));
+                                        workout_tracker_widget_front(ctx, ui, Vec2::new(110.0, 249.0), &self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[index].template.exercises);
                                     });
                                 });
                         
                                 ui.vertical(|ui| {
                                     ui.set_width(side_rect.width() / 2.0);
                                     ui.vertical_centered(|ui| {
-                                        workout_tracker_widget_behind(ctx, frame, ui, Vec2::new(110.0, 249.0));
+                                        workout_tracker_widget_behind(ctx, ui, Vec2::new(110.0, 249.0), &self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[index].template.exercises);
                                     });
                                 });
                             });
@@ -2064,32 +2004,45 @@ impl Gui<'_> {
                                 let left_padding = (side_rect.width() - total_width) / 2.1;
                                 ui.add_space(left_padding);
                         
-                                ui.add(
+                                if ui.add(
                                     Button::new(RichText::new("change workout").size(15.0).strong().color(Color32::WHITE))
                                         .fill(Color32::from_rgb(0, 75, 141))
                                         .min_size(Vec2::new(button_width, 30.0))
                                         .rounding(8),
-                                );
-                        
-                                ui.add_space(spacing);
-                        
-                                ui.add(
-                                    Button::new(RichText::new("rest").size(18.0).strong().color(Color32::WHITE))
-                                        .fill(Color32::from_rgb(91, 0, 113))
-                                        .min_size(Vec2::new(button_width, 30.0))
-                                        .rounding(8),
-                                );
+                                ).clicked() {
+                                    self.states.templates_window = !self.states.templates_window;
+                                }
+
+                                if self.states.templates_window {
+                                    self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                                } 
                         
                                 ui.add_space(spacing);
                         
                                 if ui.add(
-                                    Button::new(RichText::new("skip").size(18.0).color(Color32::WHITE))
+                                    Button::new(RichText::new("rest").size(18.0).strong().color(Color32::WHITE))
+                                        .fill(Color32::from_rgb(91, 0, 113))
+                                        .min_size(Vec2::new(button_width, 30.0))
+                                        .rounding(8),
+                                ).clicked() {
+                                    self.datas.planned_workout_data.rest(self.states.selected_day);
+                                };
+                        
+                                ui.add_space(spacing);
+                        
+                                if ui.add(
+                                    Button::new(RichText::new("remove workout").size(18.0).color(Color32::WHITE))
                                         .fill(Color32::from_rgb(141, 0, 19))
                                         .min_size(Vec2::new(button_width, 30.0))
                                         .rounding(8),
                                 ).clicked() {
-                                    self.datas.planned_workout_data.remove_workout(selected_day,  index);
+                                    self.states.alert_modal = !self.states.alert_modal;
                                 };
+
+                                if self.states.delete_was_positive {
+                                    self.datas.planned_workout_data.remove_workout(selected_day,  index);
+                                    self.states.delete_was_positive = false;
+                                }
                             });
                         });
                     });
@@ -2109,8 +2062,7 @@ impl Gui<'_> {
             painter.rect_filled(shadow_rect, egui::Rounding::same(rounding + inflate_by as u8), shadow_color(alpha));
         }
 
-        painter.rect_filled(rect, corners
-        ,fill);
+        painter.rect_filled(rect, corners, fill);
     }
 
     fn draw_calendar(&mut self, ui: &mut Ui, rect: Rect, now: DateTime<Local>) {
@@ -2189,5 +2141,295 @@ impl Gui<'_> {
             });
         });
 
+    }
+                                
+    pub fn draw_alert_window(&mut self, ui: &mut Ui, ctx: &Context, is_dark: bool, q_label: &str, conf_label: &str) {
+        let screen_rect = ctx.screen_rect();
+        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+
+        ui.painter().rect_filled(
+            screen_rect,
+            0.0,
+            if is_dark {
+                egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
+            } else {
+                egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+            }
+        );
+
+        egui::Area::new("modal_blocker".into())
+            .order(egui::Order::Background)
+            .fixed_pos(screen_rect.min)
+            .show(ctx, |ui| {
+                let _response = ui.allocate_response(screen_rect.size(), Sense::click());
+            });
+
+        let window_size = vec2(250.0, 70.0);
+
+        egui::Window::new("warning")
+            .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+            .fixed_size(window_size)
+            .collapsible(false)
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add(Label::new(RichText::new(q_label).size(18.0)));
+                });
+
+                ui.add_space(REMAINDER);
+
+                StripBuilder::new(ui)
+                    .size(Size::relative(0.5))
+                    .size(Size::relative(0.5))
+                    .horizontal(|mut strip| {
+                        strip.cell(|ui| {
+                            ui.vertical_centered(|ui| {
+                                if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE)) 
+                                    // .fill(Color32::GRAY)
+                                    .fill(Color32::from_rgb(96, 96, 96))
+                                    .min_size(ui.available_rect_before_wrap().size())
+                                    .rounding(egui::epaint::Rounding {
+                                        nw: 0,
+                                        ne: 0,
+                                        sw: 9,
+                                        se: 0,
+                                    })).clicked() {
+                                        self.states.alert_modal = !self.states.alert_modal;
+                                    }
+                            });
+                        });
+
+                        strip.cell(|ui| {
+                            ui.vertical_centered(|ui| {
+                                if ui.add(Button::new(RichText::new(conf_label).size(14.0).strong().color(Color32::WHITE)) 
+                                    .fill(Color32::from_rgb(140, 0, 0)) 
+                                    // .min_size(Vec2::new(65.0, 25.0))
+                                    .min_size(ui.available_rect_before_wrap().size())
+                                    .rounding(egui::epaint::Rounding {
+                                        nw: 0,
+                                        ne: 0,
+                                        sw: 0,
+                                        se: 9,
+                                    })).clicked() {
+                                        self.states.delete_was_positive = true;
+                                        self.states.alert_modal = !self.states.alert_modal;
+                                    }
+                            });
+                        });
+                    });
+            });
+    }
+
+    pub fn draw_templates_window(&mut self, ui: &mut Ui, ctx: &Context, is_dark: bool, elements_color: Color32, other_elements_color: Color32, text_color: Color32, open: &mut bool) {
+        let screen_rect = ctx.screen_rect();
+        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+
+        ui.painter().rect_filled(
+            screen_rect,
+            0.0,
+            if is_dark {
+                egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
+            } else {
+                egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+            }
+        );
+
+        egui::Area::new("modal_blocker".into())
+            .order(egui::Order::Background)
+            .fixed_pos(screen_rect.min)
+            .show(ctx, |ui| {
+                let _response = ui.allocate_response(screen_rect.size(), Sense::click());
+            });
+
+        let window_size = vec2(400.0, 500.0);
+        let button_size = vec2(300.0, 60.0);
+
+        egui::Window::new("workout templates")
+            .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+            .collapsible(false)
+            .resizable(false)
+            .open(open)
+            .fixed_size(window_size)
+            .show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(REMAINDER);
+
+                    if self.states.show_templates {
+                        for template in self.datas.all_workout_data.workout_templates.values() {
+                            if ui.add(
+                                Button::new(
+                                    RichText::new(format!("{}", template.workout_name))
+                                        .size(18.0)
+                                        .color(text_color),
+                                )
+                                .fill(other_elements_color)
+                                .min_size(button_size)
+                                .rounding(8),
+                            ).clicked() {
+                                if self.states.editable {
+                                    self.states.current_template = template.workout_name.clone();
+                                    self.states.show_templates = !self.states.show_templates;
+                                } else {
+                                    if let Some(rst) = self.datas.planned_workout_data.workouts.get_mut(&self.states.selected_day) {
+                                        if rst[0].template.workout_name == "rest" {
+                                            rst.remove(0);
+                                        }
+                                    };
+                                    self.datas.planned_workout_data.add_workout(self.states.selected_day, WorkoutPlanned { template: template.clone() , date: self.states.selected_day });
+                                    self.states.reset_template_window();
+                                }
+                            };
+                            ui.add_space(10.0);
+                        }
+                        if ui.add(
+                            Button::image_and_text(self.medias.plus.clone(), 
+                                RichText::new("create template")
+                                    .size(18.0)
+                                    .color(text_color),
+                            )
+                            .fill(other_elements_color)
+                            .min_size(button_size)
+                            .rounding(8),
+                        ).clicked() {
+                            self.states.create_template = !self.states.create_template;
+                            self.states.show_templates = !self.states.show_templates;
+                        };
+                    } else if self.states.create_template {
+                        ui.horizontal(|ui| {
+                            if ui.add_sized(
+                                vec2(70.0, 30.0), 
+                                Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                            ).clicked() {
+                                self.states.create_template = !self.states.create_template;
+                                self.states.show_templates = !self.states.show_templates;
+                            }
+                        });
+                    } else {
+                        ui.horizontal(|ui| {
+                            if ui.add_sized(
+                                vec2(70.0, 30.0), 
+                                Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                            ).clicked() {
+                                self.states.current_template.clear();
+                                self.states.show_templates = !self.states.show_templates;
+                            }
+
+                            ui.add_space(90.0);
+
+                            if !self.states.current_template.is_empty() {
+                                ui.add(Label::new(RichText::new(format!("{}", self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().workout_name)).color(text_color).size(23.0)));
+                            }
+                        });
+
+                        if !self.states.current_template.is_empty() {
+                            StripBuilder::new(ui)
+                                .size(Size::exact(150.0))
+                                .size(Size::remainder())
+                                .vertical(|mut strip| {
+                                    strip.cell(|ui| {
+                                        StripBuilder::new(ui)
+                                            .size(Size::relative(0.5))
+                                            .size(Size::relative(0.5))
+                                            .horizontal(|mut strip| {
+                                                strip.cell(|ui| {
+                                                    ui.vertical_centered(|ui| {
+                                                        workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().exercises);
+                                                    });
+                                                });
+
+                                                strip.cell(|ui| {
+                                                    ui.vertical_centered(|ui| {
+                                                        workout_tracker_widget_behind(ctx, ui, Vec2::new(100.0, 226.0), &self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().exercises);
+                                                    });
+                                                });
+                                            });
+                                    });
+
+                                    strip.cell(|ui| {
+                                        ScrollArea::vertical()
+                                            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                                            .show(ui, |ui| {
+                                                if let Some(template) = self.datas.all_workout_data.workout_templates.get_mut(&self.states.current_template) {
+                                                    for (index, exercise) in template.exercises.clone().iter().enumerate() {
+                                                        ui.vertical_centered(|ui| {
+                                                            ui.set_height(42.0);
+                                                            ui.set_width(350.0);
+
+                                                            let rect = ui.available_rect_before_wrap();
+
+                                                            ui.painter().rect_filled(rect, 8, other_elements_color);
+
+                                                            ui.allocate_ui_at_rect(rect, |ui| {
+                                                                // ui.add_space(10.0);
+                                                                ui.horizontal(|ui| {
+                                                                    StripBuilder::new(ui)
+                                                                        .size(Size::relative(0.05))
+                                                                        .size(Size::relative(0.3))
+                                                                        .size(Size::relative(0.3))
+                                                                        .size(Size::remainder())
+                                                                        .horizontal(|mut strip| {
+                                                                            strip.empty();
+
+                                                                            strip.cell(|ui| {
+                                                                                ui.vertical(|ui| {
+                                                                                    ui.add_space(10.0);
+                                                                                    ui.add(Label::new(RichText::new(exercise.to_string()).size(15.0).color(text_color)));
+                                                                                });
+                                                                            });
+
+                                                                            strip.empty();
+
+                                                                            strip.cell(|ui| {
+                                                                                ui.vertical_centered(|ui| {
+                                                                                    ui.add_space(2.5);
+                                                                                    if ui.add_sized(
+                                                                                        vec2(35.0, 35.0), 
+                                                                                        ImageButton::new(Image::new(self.medias.remove.clone())).frame(false)
+                                                                                    ).clicked() {
+                                                                                        template.exercises.remove(index);
+                                                                                    };
+                                                                                });
+                                                                            });
+                                                                        });
+                                                                    });
+                                                                });
+                                                            });
+                                                        ui.add_space(REMAINDER);
+                                                    }
+                                                }
+                                                ui.add(
+                                                    Button::image_and_text(self.medias.plus.clone(), 
+                                                        RichText::new("add exercise")
+                                                            .size(16.0)
+                                                            .color(text_color),
+                                                    )
+                                                    .fill(other_elements_color)
+                                                    .min_size(vec2(350.0, 42.0))
+                                                    .rounding(8),
+                                                )
+                                                // ui.vertical_centered(|ui| {
+                                                //     ui.set_height(42.0);
+                                                //     ui.set_width(350.0);
+
+                                                //     let rect = ui.available_rect_before_wrap();
+
+                                                //     ui.painter().rect_filled(rect, 8, other_elements_color);
+
+                                                //     ui.allocate_ui_at_rect(rect, |ui| {
+                                                //         ui.add
+                                            });
+                                    });
+                                });
+                        };
+                    }
+                // return false;
+            });
+        });
+
+        if !*open {
+            self.states.reset_template_window();
+        }
+
+        // *open
     }
 }

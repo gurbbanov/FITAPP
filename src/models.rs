@@ -1,9 +1,10 @@
-use std::{collections::HashMap, option};
-use egui::{Context, TextureHandle, ImageSource, include_image};
+use std::{collections::HashMap, option, fmt};
+use egui::{Context, ImageSource, TextureHandle, ahash::HashSet, include_image};
 use serde::{Deserialize, Serialize};
 use crate::tools::{load_png, weekday_iso};
 use time::OffsetDateTime;
 use chrono::{Local, NaiveDate, NaiveTime};
+use egui::ahash::HashSetExt;
 
 #[derive(Clone)]
 pub struct AppMedia<'a> {
@@ -33,6 +34,9 @@ pub struct AppMedia<'a> {
     pub glass: ImageSource<'a>,
     pub drop: ImageSource<'a>,
     pub ml: ImageSource<'a>,
+    pub workout_templates: ImageSource<'a>,
+    pub remove: ImageSource<'a>,
+    pub bed: ImageSource<'a>,
 }
 
 impl AppMedia<'_> {
@@ -64,6 +68,9 @@ impl AppMedia<'_> {
             glass: include_image!("../medias/glass.png"),
             drop: include_image!("../medias/drop.png"),
             ml: include_image!("../medias/ml.png"),
+            workout_templates: include_image!("../medias/workout_templates.png"),
+            remove: include_image!("../medias/remove.png"),
+            bed: include_image!("../medias/bed.png"),
         }
     }
 }
@@ -152,6 +159,7 @@ pub struct AllWorkoutData {
     pub week_reps: u32,
     pub week_time: u32,
     pub workouts: Vec<WorkoutDone>,
+    pub workout_templates: HashMap<String, WorkoutTemplate>,
 }
 
 impl AllWorkoutData {
@@ -168,8 +176,14 @@ impl AllWorkoutData {
             week_reps: 0,
             week_time: 0,
             workouts: vec![WorkoutDone::default()],
+            workout_templates: HashMap::from([(String::from("leg day"), WorkoutTemplate{workout_name: String::from("leg day"), exercises: vec![Exercise::HackSquat, Exercise::LegExtension, Exercise::LegCurl]})])
         }
     }
+
+    pub fn create_workout_template(&mut self, workout_name: String, exercises: Vec<Exercise>) {
+        self.workout_templates.entry(workout_name.clone()).insert_entry(WorkoutTemplate { workout_name, exercises });
+    }
+
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -177,12 +191,80 @@ pub enum Exercise {
     #[default] BenchPress,
     Deadlift,
     Squat,
+    HackSquat,
+    LegPress,
+    LegExtension,
+    LegCurl
 }
+
+impl fmt::Display for Exercise {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Exercise::BenchPress => "Bench Press",
+            Exercise::Deadlift => "Deadlift",
+            Exercise::Squat => "Squat",
+            Exercise::HackSquat => "HackSquat",
+            Exercise::LegPress => "LegPress",
+            Exercise::LegExtension => "LegExtension",
+            Exercise::LegCurl => "LegCurl",
+        };
+        write!(f, "{name}")
+    }
+}
+
+pub fn muscles_for(ex: &Exercise) -> (Vec<Muscle>, Vec<Muscle>) {
+    match ex {
+        Exercise::BenchPress => (
+            vec![Muscle::LowerChest, Muscle::UpperChest], 
+            vec![Muscle::Triceps],                   
+        ),
+        Exercise::Deadlift => (
+            vec![Muscle::LowerBack, Muscle::Glutes],      
+            vec![Muscle::Hamstrings],                
+        ),
+        Exercise::Squat => (
+            vec![Muscle::Quads],                     
+            vec![Muscle::Glutes, Muscle::Hamstrings],
+        ),
+        Exercise::HackSquat => (
+            vec![Muscle::Quads, Muscle::Hips],
+            vec![Muscle::Hamstrings],
+        ),
+        Exercise::LegPress => (
+            vec![Muscle::Quads, Muscle::Hamstrings],
+            vec![Muscle::ExtHips],
+        ),
+        Exercise::LegExtension => (
+            vec![Muscle::Quads, Muscle::ExtHips],
+            vec![Muscle::Hips],
+        ),
+        Exercise::LegCurl => (
+            vec![Muscle::Hamstrings],
+            vec![Muscle::Hips],
+        ),
+    }
+}
+
+pub fn muscle_for_workout(exercises: &Vec<Exercise>) -> (Vec<Muscle>, Vec<Muscle>) {
+    let mut primary_muscle = HashSet::new();
+    let mut secondary_muscle = HashSet::new();
+
+    for ex in exercises {
+        let m = muscles_for(ex);
+        primary_muscle.extend(m.0);
+        secondary_muscle.extend(m.1);
+    }
+
+    (primary_muscle.into_iter().collect::<Vec<Muscle>>(), secondary_muscle.into_iter().collect::<Vec<Muscle>>())
+}
+
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct WorkoutTemplate {
     pub workout_name: String,
     pub exercises: Vec<Exercise>,
+    // pub rimary_muscles: Vec<Muscle>,
+    // pub secondary_muscles: Vec<Muscle>,
 }
 
 impl WorkoutTemplate {
@@ -190,13 +272,31 @@ impl WorkoutTemplate {
         Self {
             workout_name: String::from("full body"),
             exercises: vec![Exercise::BenchPress, Exercise::Deadlift, Exercise::Squat],
+            // primary_muscles: vec![Muscle::LowerChest, Muscle::Quads, Muscle::Hips, Muscle::Hamstrings, Muscle::Calfs],
+            // secondary_muscles: vec![Muscle::Forearms, Muscle::UpperChest, Muscle::LowerBack],
         }
     }
+
+    pub fn rest() -> Self {
+        Self {
+            workout_name: String::from("rest"),
+            exercises: vec![],
+        }
+    }
+
+    // pub fn new(name: String, exercises: Vec<Exercise>) -> Self {
+    //     Self {
+    //         workout_name: name,
+    //         exercises: exercises,
+    //     }
+    // }
 
     pub fn legs() -> Self {
         Self {
             workout_name: String::from("legs"),
             exercises: vec![Exercise::Squat],
+            // primary_muscles: vec![Muscle::Quads, Muscle::Hips, Muscle::Hamstrings],
+            // secondary_muscles: vec![Muscle::Calfs],
         }
     }
 }
@@ -236,6 +336,13 @@ impl WorkoutPlanned {
         }
     }
 
+    pub fn rest(date: NaiveDate) -> Self {
+        Self {
+            template: WorkoutTemplate::rest(),
+            date,
+        }
+    }
+
     pub fn leg_day(date: NaiveDate) -> Self {
         Self {
             template: WorkoutTemplate::legs(),
@@ -248,6 +355,11 @@ impl WorkoutPlanned {
 pub struct WorkoutPlannedData {
     pub workouts: HashMap<NaiveDate, Vec<WorkoutPlanned>>,
 }
+
+// #[derive(Serialize, Deserialize, Default, Debug, Clone, Allocator)]
+// pub struct Rest {
+//     date: NaiveDate,
+// }
 
 impl WorkoutPlannedData {
     pub fn default() -> Self {
@@ -262,8 +374,15 @@ impl WorkoutPlannedData {
         Ok(())
     }
 
-    pub fn remove_workout(&mut self, data: NaiveDate, index: usize) -> Result<(), String> {
-        if let workouts = self.workouts.get_mut(&data).unwrap() {
+    pub fn rest(&mut self, date: NaiveDate) {
+        if let Some(workouts) = self.workouts.get_mut(&date) {
+            workouts.clear();
+        }
+        self.workouts.entry(date).or_default().push(WorkoutPlanned::rest(date));
+    }
+
+    pub fn remove_workout(&mut self, date: NaiveDate, index: usize) -> Result<(), String> {
+        if let workouts = self.workouts.get_mut(&date).unwrap() {
             workouts.remove(index);
             Ok(())
         } else {
@@ -292,6 +411,31 @@ impl WorkoutData {
         }
     }
 }   
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Hash, Eq)]
+pub enum Muscle {
+    Necks,
+    Traps,
+    UpperChest,
+    LowerChest,
+    FrontDelt,
+    SideDelt,
+    RearDelt,
+    Biceps,
+    Triceps,
+    Forearms,
+    Abs,
+    Hips,
+    Adductors,
+    Quads,
+    ExtHips,
+    Calfs,
+    Infraspinatus,
+    Lats,
+    LowerBack,
+    Glutes,
+    Hamstrings,
+}
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct MacroData {
@@ -508,6 +652,11 @@ pub struct States {
     pub water_add_clicked: bool,
     pub water_add_value: String,
     pub hydration_percent: String,
+    pub templates_window: bool,
+    pub show_templates: bool,
+    pub create_template: bool,
+    pub current_template: String,
+    pub editable: bool,
     // pub scroll_offset: f32,
     // pub velocity: f32,
     // pub dragging: bool,
@@ -539,6 +688,11 @@ impl States {
             water_add_clicked: false,
             water_add_value: String::from("0"),
             hydration_percent: String::from("0"),
+            templates_window: false,
+            show_templates: true,
+            create_template: false,
+            current_template: String::new(),
+            editable: false,
             // scroll_offset: 0.0,
             // velocity: 0.0,
             // dragging: false,
@@ -559,6 +713,14 @@ impl States {
     pub fn reset_water(&mut self) {
         self.water_add_value = String::from("0");
         self.hydration_percent = String::from("0");
+    }
+
+    pub fn reset_template_window(&mut self) {
+        self.templates_window = false;
+        self.show_templates = true;
+        self.create_template = false;
+        self.current_template = String::new();
+        self.editable = false;
     }
 }
 
