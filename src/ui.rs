@@ -1,11 +1,11 @@
 use eframe::{Frame};
-use egui::Window;
-use egui::{CornerRadius, TextEdit, Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style, CursorIcon, Sense, Id};
+use egui::{CornerRadius, TextEdit, Layout, Context, ColorImage, ImageSource, ScrollArea, Ui, Image, Color32, TextStyle, RichText, Align, Vec2, Rounding, Label, Button, vec2, ImageButton, Rect, Pos2, scroll_area::ScrollBarVisibility, Stroke, StrokeKind, FontFamily, FontId, Style, CursorIcon, Sense, Id, Window, Area, Order, LayerId};
 use egui_extras::{Size, Strip, StripBuilder};
 use time::{OffsetDateTime};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate};
+use strum::IntoEnumIterator;
 
-use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutPlannedData, WorkoutTemplate, Muscle, Exercise};
+use crate::models::{AppMedia, States, Summary, UserDataPack, WorkoutPlanned, WorkoutPlannedData, WorkoutTemplate, Muscle, Exercises};
 use crate::muscles::{workout_tracker_widget_front, workout_tracker_widget_behind};
 use crate::tools::weekday_iso;
 
@@ -68,8 +68,8 @@ impl Gui<'_> {
                             strip.cell(|ui| {
                                     ui.vertical_centered(|ui| {
                                         ui.add_sized([100.0, 100.0], Image::new(self.medias.default_pp.clone()).corner_radius(5.0));
-                                        ui.label(egui::RichText::new(format!("{}", self.datas.user_information.name)).size(20.0).strong());
-                                        ui.label(egui::RichText::new(format!("@{}", self.datas.user_information.username)).size(15.0));
+                                        ui.label(RichText::new(format!("{}", self.datas.user_information.name)).size(20.0).strong());
+                                        ui.label(RichText::new(format!("@{}", self.datas.user_information.username)).size(15.0));
                                     });
                             });
 
@@ -99,7 +99,7 @@ impl Gui<'_> {
                             strip.cell(|ui| {
                                 ui.add_space(ui.available_height() / 4.0);
                                 ui.vertical_centered(|ui| {
-                                    ui.add_sized(egui::vec2(ui.available_width(), 10.0), egui::ProgressBar::new(0.0).show_percentage());
+                                    ui.add_sized(vec2(ui.available_width(), 10.0), egui::ProgressBar::new(0.0).show_percentage());
                                 });
                             });
 
@@ -145,7 +145,7 @@ impl Gui<'_> {
                             strip.empty();
 
                             strip.cell(|ui| {
-                                ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
+                                ui.spacing_mut().item_spacing = vec2(1.0, -3.0);
 
                                 ui.vertical_centered(|ui| {
                                     ui.add_space(REMAINDER * 2.0);
@@ -188,7 +188,7 @@ impl Gui<'_> {
 
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
-                                    ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
+                                    ui.spacing_mut().item_spacing = vec2(1.0, -3.0);
                                     ui.label(RichText::new("water tracker").size(17.5).strong());
 
                                     ui.add_space(REMAINDER);
@@ -233,7 +233,7 @@ impl Gui<'_> {
                                         .horizontal(|mut strip| {
                                             strip.cell(|ui| {
                                                 ui.vertical_centered(|ui| {
-                                                    workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &vec![Exercise::Deadlift, Exercise::BenchPress]);
+                                                    workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &vec![Exercises::Deadlift, Exercises::BenchPress]);
                                                 });
                                             });
 
@@ -258,11 +258,11 @@ impl Gui<'_> {
             });
 
         let screen_rect = ctx.screen_rect();
-        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+        let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("dark_backdrop")));
         painter.rect_filled(
             screen_rect,
             0.0,
-            egui::Color32::from_rgba_unmultiplied(20, 20, 20, 0),
+            Color32::from_rgba_unmultiplied(20, 20, 20, 0),
         );
 
         ui.allocate_ui_at_rect(screen_rect, |ui| {
@@ -296,9 +296,9 @@ impl Gui<'_> {
                     ScrollArea::vertical()
                         .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
                         .show(ui, |ui| {
-                            let side_rect = egui::Rect::from_min_size(
+                            let side_rect = Rect::from_min_size(
                             ctx.screen_rect().left_top() + vec2(50.0, 125.0),
-                            egui::vec2(ui.available_width() - 100.0, 600.0),
+                            vec2(ui.available_width() - 100.0, 600.0),
                             );
 
                             let rect_height = side_rect.height();
@@ -528,9 +528,9 @@ impl Gui<'_> {
                             self.draw_alert_window(ui, ctx, is_dark, "are sure to remove workout?", "remove");
                         }
 
-                        let top_rect = egui::Rect::from_min_size(
+                        let top_rect = Rect::from_min_size(
                             ctx.screen_rect().left_top(),
-                            egui::vec2(ui.available_width(), 100.0),
+                            vec2(ui.available_width(), 100.0),
                         );
 
                         Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
@@ -555,8 +555,8 @@ impl Gui<'_> {
                                                     .min_size(Vec2::new(75.0, 30.0))
                                                     .rounding(5.0),
                                                 ).clicked() {
+                                                    self.states.editable = true;
                                                     self.states.templates_window = !self.states.templates_window;
-                                                    self.states.editable != self.states.editable;
                                                 }
 
                                                 if self.states.templates_window {
@@ -576,11 +576,18 @@ impl Gui<'_> {
                                         strip.cell(|ui| {
                                             ui.horizontal_centered(|ui| {
                                                 ui.add_space(50.0);
-                                                ui.add(Button::image_and_text(self.medias.workouts.clone(), RichText::new("exercises").size(13.0).strong().color(text_color))
+                                                if ui.add(Button::image_and_text(self.medias.workouts.clone(), RichText::new("exercises").size(13.0).strong().color(text_color))
                                                     .fill(other_elements_color)
                                                     .min_size(Vec2::new(75.0, 30.0))
-                                                    .rounding(5.0),)
-                                                });
+                                                    .rounding(5.0),
+                                                ).clicked() {
+                                                    self.states.exercises_window = !self.states.exercises_window;
+                                                }
+
+                                                if self.states.exercises_window {
+                                                    self.draw_exercises_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                                                }
+                                            });
                                         });
                                     });
                             });
@@ -588,7 +595,7 @@ impl Gui<'_> {
 
 
                         let screen_rect = ctx.screen_rect();
-                        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
+                        let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("ambient layout")));
 
                         ui.allocate_ui_at_rect(screen_rect, |ui| {
                             if self.states.alert_modal {
@@ -604,7 +611,7 @@ impl Gui<'_> {
                     });
 
                 strip.cell(|ui| {
-                    let bot_rect = egui::Rect::from_min_size(
+                    let bot_rect = Rect::from_min_size(
                         ctx.screen_rect().left_bottom() - vec2(0.0, 150.0),
                         ctx.screen_rect().right_bottom().to_vec2(),
                     );
@@ -653,10 +660,10 @@ impl Gui<'_> {
                     ui.vertical_centered(|ui| {
                         ui.add(Label::new(RichText::new("CALORIES").size(25.0).strong()).selectable(false));
 
-                        let calory_rect =egui::Rect::from_min_size(
+                        let calory_rect = Rect::from_min_size(
                             // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
                             ctx.screen_rect().left_top() + vec2(150.0, 155.0),
-                            egui::vec2(ui.available_width() - 300.0, 90.0),
+                            vec2(ui.available_width() - 300.0, 90.0),
                         );
 
                         ui.painter().rect_filled(
@@ -749,7 +756,7 @@ impl Gui<'_> {
                             ui.allocate_ui_at_rect(carbs_rect, |ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.add_space(2.0);
-                                    ui.label(RichText::new("carbs").strong().color(egui::Color32::from_rgb(141, 54, 0)).size(14.0));
+                                    ui.label(RichText::new("carbs").strong().color(Color32::from_rgb(141, 54, 0)).size(14.0));
                                     ui.label(RichText::new(format!("{}/{}", self.datas.macro_data.carb_registered, self.datas.macro_data.carb_goal)).size(23.0).strong());
                                     ui.add_space(5.0);
                                     ui.horizontal(|ui| {
@@ -773,7 +780,7 @@ impl Gui<'_> {
                             ui.allocate_ui_at_rect(proteins_rect, |ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.add_space(2.0);
-                                    ui.label(RichText::new("proteins").strong().color(egui::Color32::from_rgb(0, 75, 140)).size(14.0));
+                                    ui.label(RichText::new("proteins").strong().color(Color32::from_rgb(0, 75, 140)).size(14.0));
                                     ui.label(RichText::new(format!("{}/{}", self.datas.macro_data.protein_registered, self.datas.macro_data.protein_goal)).size(23.0).strong());
                                     ui.add_space(5.0);
                                     ui.horizontal(|ui| {
@@ -797,7 +804,7 @@ impl Gui<'_> {
                             ui.allocate_ui_at_rect(fats_rect, |ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.add_space(2.0);
-                                    ui.label(RichText::new("fats").strong().color(egui::Color32::from_rgb(141, 0, 19)).size(14.0));
+                                    ui.label(RichText::new("fats").strong().color(Color32::from_rgb(141, 0, 19)).size(14.0));
                                     ui.label(RichText::new(format!("{}/{}", self.datas.macro_data.fat_registered, self.datas.macro_data.fat_goal)).size(23.0).strong());
                                     ui.add_space(5.0);
                                     ui.horizontal(|ui| {
@@ -906,9 +913,9 @@ impl Gui<'_> {
                             });
                         });
 
-                        let top_rect = egui::Rect::from_min_size(
+                        let top_rect = Rect::from_min_size(
                             ctx.screen_rect().left_top(),
-                            egui::vec2(ui.available_width(), 100.0),
+                            vec2(ui.available_width(), 100.0),
                         );
 
                         Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
@@ -927,7 +934,7 @@ impl Gui<'_> {
                         });
 
                     let screen_rect = ctx.screen_rect();
-                    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
+                    let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("ambient layout")));
 
                     ui.allocate_ui_at_rect(screen_rect, |ui| {
                         if self.states.alert_modal {
@@ -943,7 +950,7 @@ impl Gui<'_> {
                 });
 
                 strip.cell(|ui| {
-                    let bot_rect = egui::Rect::from_min_max(
+                    let bot_rect = Rect::from_min_max(
                         // ctx.screen_rect().left_bottom() - vec2(0.0, 150.0),
                         // ctx.screen_rect().right_bottom().to_vec2(),
                         ctx.screen_rect().left_bottom() - vec2(0.0, self.states.strip_size),
@@ -972,9 +979,9 @@ impl Gui<'_> {
                     ui.vertical_centered(|ui| {
                         ui.allocate_ui_at_rect(bot_rect, |ui| {
                             if !self.states.macro_add_clicked {
-                                let rect = egui::Rect::from_min_size(
+                                let rect = Rect::from_min_size(
                                     egui::pos2(bot_rect.center().x - 35.0, bot_rect.left_top().y - 20.0),
-                                    egui::vec2(70.0, 25.0),
+                                    vec2(70.0, 25.0),
                                 );
 
                                 Self::draw_rect_with_black_shadow(ui.painter(), rect, 5, other_elements_color, 0.0, 1.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
@@ -1169,7 +1176,7 @@ impl Gui<'_> {
             });
     }
 
-    pub fn water_tracker_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, elements_color: Color32, tint_color: Color32) {
+    pub fn water_tracker_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, elements_color: Color32, tint_color: Color32) {
         let is_dark = ctx.style().visuals.dark_mode;
         let mut other_elements_color;
         let mut text_color;
@@ -1198,9 +1205,9 @@ impl Gui<'_> {
             .size(Size::exact(self.states.strip_size))
             .vertical(|mut strip|{
                 strip.cell(|ui| {
-                    let top_rect = egui::Rect::from_min_size(
+                    let top_rect = Rect::from_min_size(
                         ctx.screen_rect().left_top(),
-                        egui::vec2(ui.available_width(), 100.0),
+                        vec2(ui.available_width(), 100.0),
                     );
 
                     Self::draw_rect_with_black_shadow(ui.painter(), top_rect, 24, elements_color, 0.0, 6.0, [(5.0, 20), (3.0, 25), (2.0, 30),], Rounding {
@@ -1223,10 +1230,10 @@ impl Gui<'_> {
                     ui.vertical_centered(|ui| {
                         ui.add(Label::new(RichText::new("WATER").size(25.0).strong()).selectable(false));
 
-                        let water_rect =egui::Rect::from_min_size(
+                        let water_rect =Rect::from_min_size(
                             // top_rect.left_top() + egui::vec2(50.0, top_rect.height() + 25.0),
                             ctx.screen_rect().left_top() + vec2(150.0, 155.0),
-                            egui::vec2(ui.available_width() - 300.0, 90.0),
+                            vec2(ui.available_width() - 300.0, 90.0),
                         );
 
                         ui.painter().rect_filled(
@@ -1253,7 +1260,7 @@ impl Gui<'_> {
 
                     ui.vertical_centered(|ui| {
                         ui.set_width(350.0);
-                        ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
+                        ui.spacing_mut().item_spacing = vec2(1.0, -3.0);
                         self.water_tracker_bar(ctx, frame, ui, spacing, circle_size, water_rows, water_cols, water_percent);
                     });
                     
@@ -1583,7 +1590,7 @@ impl Gui<'_> {
                     });
 
                     let screen_rect = ctx.screen_rect();
-                    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("ambient layout")));
+                    let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("ambient layout")));
 
                     ui.allocate_ui_at_rect(screen_rect, |ui| {
                         if self.states.alert_modal {
@@ -1599,7 +1606,7 @@ impl Gui<'_> {
                 });
 
                 strip.cell(|ui| {
-                    let bot_rect = egui::Rect::from_min_max(
+                    let bot_rect = Rect::from_min_max(
                         // ctx.screen_rect().left_bottom() - vec2(0.0, 150.0),
                         // ctx.screen_rect().right_bottom().to_vec2(),
                         ctx.screen_rect().left_bottom() - vec2(0.0, self.states.strip_size),
@@ -1628,9 +1635,9 @@ impl Gui<'_> {
                     ui.vertical_centered(|ui| {
                         ui.allocate_ui_at_rect(bot_rect, |ui| {
                             if !self.states.water_add_clicked {
-                                let rect = egui::Rect::from_min_size(
+                                let rect = Rect::from_min_size(
                                     egui::pos2(bot_rect.center().x - 35.0, bot_rect.left_top().y - 20.0),
-                                    egui::vec2(70.0, 25.0),
+                                    vec2(70.0, 25.0),
                                 );
 
                                 Self::draw_rect_with_black_shadow(ui.painter(), rect, 5, other_elements_color, 0.0, 1.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
@@ -1770,10 +1777,10 @@ impl Gui<'_> {
             });
     }
 
-    pub fn statistics_ui(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
+    pub fn statistics_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui) {
     }
             
-    pub fn navigation_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
+    pub fn navigation_bar(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui) {
         let is_dark = ctx.style().visuals.dark_mode;
         let mut elements_color;
         let mut tint_color;
@@ -1797,8 +1804,8 @@ impl Gui<'_> {
         }
     }
 
-    fn calory_tracker_bar(&mut self, ctx: &Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, spacing: f32, rect_size: f32, rows: u32, cols: u32, calory_percent: u32) {
-        ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0);
+    fn calory_tracker_bar(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, spacing: f32, rect_size: f32, rows: u32, cols: u32, calory_percent: u32) {
+        ui.spacing_mut().item_spacing = vec2(1.0, -3.0);
 
         let mut green_rects = {
             if self.datas.macro_data.calory_registered == 0 {
@@ -1815,7 +1822,7 @@ impl Gui<'_> {
                 ui.horizontal(|ui| {
                     for col in 0..cols {
                         let (rect, _) = ui.allocate_exact_size(
-                            egui::vec2(rect_size, rect_size),
+                            vec2(rect_size, rect_size),
                             egui::Sense::hover(),
                         );
 
@@ -1839,8 +1846,8 @@ impl Gui<'_> {
         });
     }
 
-    fn water_tracker_bar(&mut self, ctx: &Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, spacing: f32, circle_size: f32, rows: u32, cols: u32, water_percent: u32) {
-        ui.spacing_mut().item_spacing = egui::vec2(1.0, 3.0);
+    fn water_tracker_bar(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, spacing: f32, circle_size: f32, rows: u32, cols: u32, water_percent: u32) {
+        ui.spacing_mut().item_spacing = vec2(1.0, 3.0);
 
         let mut done_marks = {
             if self.datas.water_data.water_registered == 0 {
@@ -1857,7 +1864,7 @@ impl Gui<'_> {
                 ui.horizontal(|ui| {
                     for col in 0..cols {
                         let (rect, _) = ui.allocate_exact_size(
-                            egui::vec2(circle_size, circle_size),
+                            vec2(circle_size, circle_size),
                             egui::Sense::hover(),
                         );
         
@@ -1882,8 +1889,8 @@ impl Gui<'_> {
         });
     }
 
-    fn mini_tracker_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame, ui: &mut egui::Ui, spacing: f32, rect_size:f32, cols: i32, registered: u32, goal: u32) {
-        ui.spacing_mut().item_spacing = egui::vec2(1.0, -3.0); 
+    fn mini_tracker_bar(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, spacing: f32, rect_size:f32, cols: i32, registered: u32, goal: u32) {
+        ui.spacing_mut().item_spacing = vec2(1.0, -3.0); 
 
         let ROWS = 5;
         let COLUMNS = 5;
@@ -1902,7 +1909,7 @@ impl Gui<'_> {
                 ui.horizontal(|ui| {
                     for col in 0..COLUMNS {
                         let (rect, _) = ui.allocate_exact_size(
-                            egui::vec2(rect_size, rect_size),
+                            vec2(rect_size, rect_size),
                             egui::Sense::hover(),
                         );
 
@@ -2050,7 +2057,7 @@ impl Gui<'_> {
             });
     }
 
-    fn draw_rect_with_black_shadow(painter: &egui::Painter, rect: egui::Rect, rounding: u8, fill: Color32, offset_x: f32, offset_y: f32, layer: [(f32, u8); 3], corners: Rounding) {
+    fn draw_rect_with_black_shadow(painter: &egui::Painter, rect: Rect, rounding: u8, fill: Color32, offset_x: f32, offset_y: f32, layer: [(f32, u8); 3], corners: Rounding) {
         let shadow_color = |alpha: u8| Color32::from_rgba_unmultiplied(0, 0, 0, alpha);
 
         let shadow_offset = Vec2::new(offset_x, offset_y);
@@ -2145,20 +2152,20 @@ impl Gui<'_> {
                                 
     pub fn draw_alert_window(&mut self, ui: &mut Ui, ctx: &Context, is_dark: bool, q_label: &str, conf_label: &str) {
         let screen_rect = ctx.screen_rect();
-        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+        let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("dark_backdrop")));
 
         ui.painter().rect_filled(
             screen_rect,
             0.0,
             if is_dark {
-                egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
+                Color32::from_rgba_unmultiplied(20, 20, 20,150)
             } else {
-                egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+                Color32::from_rgba_unmultiplied(240, 240, 240, 150)
             }
         );
 
-        egui::Area::new("modal_blocker".into())
-            .order(egui::Order::Background)
+        Area::new("modal_blocker".into())
+            .order(Order::Background)
             .fixed_pos(screen_rect.min)
             .show(ctx, |ui| {
                 let _response = ui.allocate_response(screen_rect.size(), Sense::click());
@@ -2166,7 +2173,7 @@ impl Gui<'_> {
 
         let window_size = vec2(250.0, 70.0);
 
-        egui::Window::new("warning")
+        Window::new("warning")
             .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
             .fixed_size(window_size)
             .collapsible(false)
@@ -2222,20 +2229,20 @@ impl Gui<'_> {
 
     pub fn draw_templates_window(&mut self, ui: &mut Ui, ctx: &Context, is_dark: bool, elements_color: Color32, other_elements_color: Color32, text_color: Color32, open: &mut bool) {
         let screen_rect = ctx.screen_rect();
-        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("dark_backdrop")));
+        let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("dark_backdrop")));
 
         ui.painter().rect_filled(
             screen_rect,
             0.0,
             if is_dark {
-                egui::Color32::from_rgba_unmultiplied(20, 20, 20,150)
+                Color32::from_rgba_unmultiplied(20, 20, 20,150)
             } else {
-                egui::Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+                Color32::from_rgba_unmultiplied(240, 240, 240, 150)
             }
         );
 
-        egui::Area::new("modal_blocker".into())
-            .order(egui::Order::Background)
+        Area::new("modal_blocker".into())
+            .order(Order::Background)
             .fixed_pos(screen_rect.min)
             .show(ctx, |ui| {
                 let _response = ui.allocate_response(screen_rect.size(), Sense::click());
@@ -2244,7 +2251,7 @@ impl Gui<'_> {
         let window_size = vec2(400.0, 500.0);
         let button_size = vec2(300.0, 60.0);
 
-        egui::Window::new("workout templates")
+        Window::new("workout templates")
             .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
             .collapsible(false)
             .resizable(false)
@@ -2431,5 +2438,73 @@ impl Gui<'_> {
         }
 
         // *open
+    }
+
+    pub fn draw_exercises_window(&mut self, ui: &mut Ui, ctx: &Context, is_dark: bool, elements_color: Color32, other_elements_color: Color32, text_color: Color32, open: &mut bool) {
+        let screen_rect = ctx.screen_rect();
+        let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("dark_backdrop")));
+
+        ui.painter().rect_filled(
+            screen_rect,
+            0.0,
+            if is_dark {
+                Color32::from_rgba_unmultiplied(20, 20, 20,150)
+            } else {
+                Color32::from_rgba_unmultiplied(240, 240, 240, 150)
+            }
+        );
+
+        Area::new("modal_blocker".into())
+            .order(Order::Background)
+            .fixed_pos(screen_rect.min)
+            .show(ctx, |ui| {
+                let _response = ui.allocate_response(screen_rect.size(), Sense::click());
+            });
+
+        let window_size = vec2(400.0, 500.0);
+        let button_size = vec2(300.0, 60.0);
+
+        Window::new("exercises")
+            .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+            .collapsible(false)
+            .resizable(false)
+            .open(open)
+            .fixed_size(window_size)
+            .show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ScrollArea::vertical().show(ui, |ui| {
+                        ui.add_space(REMAINDER);
+                        for exercise in Exercises::iter() {
+                            if ui.add(
+                                Button::new(
+                                    RichText::new(format!("{}", exercise))
+                                        .size(18.0)
+                                        .color(text_color),
+                                )
+                                .fill(other_elements_color)
+                                .min_size(button_size)
+                                .rounding(8),
+                            ).clicked() {
+                            };
+                            ui.add_space(10.0);
+                        }
+                        if ui.add(
+                            Button::image_and_text(self.medias.plus.clone(), 
+                                RichText::new("create exercise")
+                                    .size(18.0)
+                                    .color(text_color),
+                            )
+                            .fill(other_elements_color)
+                            .min_size(button_size)
+                            .rounding(8),                    
+                        ).clicked() {
+                        }
+                    });
+                });
+            });
+
+        if !*open {
+            self.states.exercises_window = false;
+        }
     }
 }

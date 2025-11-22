@@ -5,6 +5,8 @@ use crate::tools::{load_png, weekday_iso};
 use time::OffsetDateTime;
 use chrono::{Local, NaiveDate, NaiveTime};
 use egui::ahash::HashSetExt;
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
 #[derive(Clone)]
 pub struct AppMedia<'a> {
@@ -176,19 +178,31 @@ impl AllWorkoutData {
             week_reps: 0,
             week_time: 0,
             workouts: vec![WorkoutDone::default()],
-            workout_templates: HashMap::from([(String::from("leg day"), WorkoutTemplate{workout_name: String::from("leg day"), exercises: vec![Exercise::HackSquat, Exercise::LegExtension, Exercise::LegCurl]})])
+            workout_templates: HashMap::from(
+                [
+                (String::from("leg day"), 
+                    WorkoutTemplate{workout_name: String::from("leg day"), 
+                    exercises: vec![Exercises::HackSquat, Exercises::LegExtension, Exercises::LegCurl]}
+                ),
+                (String::from("pull day"),
+                    WorkoutTemplate{workout_name: String::from("pull day"),
+                    exercises: vec![Exercises::BenchPress, Exercises::TricepDips]}
+                )
+                ]
+            )
         }
     }
 
-    pub fn create_workout_template(&mut self, workout_name: String, exercises: Vec<Exercise>) {
+    pub fn create_workout_template(&mut self, workout_name: String, exercises: Vec<Exercises>) {
         self.workout_templates.entry(workout_name.clone()).insert_entry(WorkoutTemplate { workout_name, exercises });
     }
 
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub enum Exercise {
+#[derive(Serialize, Deserialize, Default, Debug, Clone, EnumIter)]
+pub enum Exercises {
     #[default] BenchPress,
+    TricepDips,
     Deadlift,
     Squat,
     HackSquat,
@@ -197,55 +211,60 @@ pub enum Exercise {
     LegCurl
 }
 
-impl fmt::Display for Exercise {
+impl fmt::Display for Exercises {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
-            Exercise::BenchPress => "Bench Press",
-            Exercise::Deadlift => "Deadlift",
-            Exercise::Squat => "Squat",
-            Exercise::HackSquat => "HackSquat",
-            Exercise::LegPress => "LegPress",
-            Exercise::LegExtension => "LegExtension",
-            Exercise::LegCurl => "LegCurl",
+            Exercises::BenchPress => "Bench Press",
+            Exercises::TricepDips => "Tricep Dips",
+            Exercises::Deadlift => "Deadlift",
+            Exercises::Squat => "Squat",
+            Exercises::HackSquat => "Hack Squat",
+            Exercises::LegPress => "Leg Press",
+            Exercises::LegExtension => "Leg Extension",
+            Exercises::LegCurl => "Leg Curl",
         };
         write!(f, "{name}")
     }
 }
 
-pub fn muscles_for(ex: &Exercise) -> (Vec<Muscle>, Vec<Muscle>) {
+pub fn muscles_for(ex: &Exercises) -> (Vec<Muscle>, Vec<Muscle>) {
     match ex {
-        Exercise::BenchPress => (
+        Exercises::BenchPress => (
             vec![Muscle::LowerChest, Muscle::UpperChest], 
             vec![Muscle::Triceps],                   
         ),
-        Exercise::Deadlift => (
+        Exercises::TricepDips => (
+            vec![Muscle::Triceps],
+            vec![Muscle::LowerChest],
+        ),
+        Exercises::Deadlift => (
             vec![Muscle::LowerBack, Muscle::Glutes],      
             vec![Muscle::Hamstrings],                
         ),
-        Exercise::Squat => (
+        Exercises::Squat => (
             vec![Muscle::Quads],                     
             vec![Muscle::Glutes, Muscle::Hamstrings],
         ),
-        Exercise::HackSquat => (
+        Exercises::HackSquat => (
             vec![Muscle::Quads, Muscle::Hips],
             vec![Muscle::Hamstrings],
         ),
-        Exercise::LegPress => (
+        Exercises::LegPress => (
             vec![Muscle::Quads, Muscle::Hamstrings],
             vec![Muscle::ExtHips],
         ),
-        Exercise::LegExtension => (
+        Exercises::LegExtension => (
             vec![Muscle::Quads, Muscle::ExtHips],
             vec![Muscle::Hips],
         ),
-        Exercise::LegCurl => (
+        Exercises::LegCurl => (
             vec![Muscle::Hamstrings],
             vec![Muscle::Hips],
         ),
     }
 }
 
-pub fn muscle_for_workout(exercises: &Vec<Exercise>) -> (Vec<Muscle>, Vec<Muscle>) {
+pub fn muscle_for_workout(exercises: &Vec<Exercises>) -> (Vec<Muscle>, Vec<Muscle>) {
     let mut primary_muscle = HashSet::new();
     let mut secondary_muscle = HashSet::new();
 
@@ -262,7 +281,7 @@ pub fn muscle_for_workout(exercises: &Vec<Exercise>) -> (Vec<Muscle>, Vec<Muscle
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct WorkoutTemplate {
     pub workout_name: String,
-    pub exercises: Vec<Exercise>,
+    pub exercises: Vec<Exercises>,
     // pub rimary_muscles: Vec<Muscle>,
     // pub secondary_muscles: Vec<Muscle>,
 }
@@ -271,7 +290,7 @@ impl WorkoutTemplate {
     pub fn default() -> Self {
         Self {
             workout_name: String::from("full body"),
-            exercises: vec![Exercise::BenchPress, Exercise::Deadlift, Exercise::Squat],
+            exercises: vec![Exercises::BenchPress, Exercises::Deadlift, Exercises::Squat],
             // primary_muscles: vec![Muscle::LowerChest, Muscle::Quads, Muscle::Hips, Muscle::Hamstrings, Muscle::Calfs],
             // secondary_muscles: vec![Muscle::Forearms, Muscle::UpperChest, Muscle::LowerBack],
         }
@@ -284,7 +303,7 @@ impl WorkoutTemplate {
         }
     }
 
-    // pub fn new(name: String, exercises: Vec<Exercise>) -> Self {
+    // pub fn new(name: String, exercises: Vec<Exercises>) -> Self {
     //     Self {
     //         workout_name: name,
     //         exercises: exercises,
@@ -294,7 +313,7 @@ impl WorkoutTemplate {
     pub fn legs() -> Self {
         Self {
             workout_name: String::from("legs"),
-            exercises: vec![Exercise::Squat],
+            exercises: vec![Exercises::Squat],
             // primary_muscles: vec![Muscle::Quads, Muscle::Hips, Muscle::Hamstrings],
             // secondary_muscles: vec![Muscle::Calfs],
         }
@@ -657,6 +676,7 @@ pub struct States {
     pub create_template: bool,
     pub current_template: String,
     pub editable: bool,
+    pub exercises_window: bool,
     // pub scroll_offset: f32,
     // pub velocity: f32,
     // pub dragging: bool,
@@ -693,6 +713,7 @@ impl States {
             create_template: false,
             current_template: String::new(),
             editable: false,
+            exercises_window: false,
             // scroll_offset: 0.0,
             // velocity: 0.0,
             // dragging: false,

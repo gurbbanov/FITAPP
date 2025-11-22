@@ -1,9 +1,9 @@
 use eframe::egui;
 use eframe::egui::{vec2, Color32, Pos2, Shape, Stroke, Vec2};
 use serde::de;
-use crate::models::{Exercise, Muscle, muscle_for_workout};
+use crate::models::{Exercises, Muscle, muscle_for_workout};
 
-pub fn workout_tracker_widget_front(ctx: &egui::Context, ui: &mut egui::Ui, size: Vec2, exercises: &Vec<Exercise>) {
+pub fn workout_tracker_widget_front(ctx: &egui::Context, ui: &mut egui::Ui, size: Vec2, exercises: &Vec<Exercises>) {
     let (primary_muscles, secondary_muscles) = muscle_for_workout(exercises);
 
     let (rect, _response) = ui.allocate_exact_size(size, egui::Sense::hover());
@@ -443,7 +443,7 @@ pub fn workout_tracker_widget_front(ctx: &egui::Context, ui: &mut egui::Ui, size
     );
 }
 
-pub fn workout_tracker_widget_behind(ctx: &egui::Context, ui: &mut egui::Ui, size: Vec2, exercises: &Vec<Exercise>) {
+pub fn workout_tracker_widget_behind(ctx: &egui::Context, ui: &mut egui::Ui, size: Vec2, exercises: &Vec<Exercises>) {
     let (primary_muscles, secondary_muscles) = muscle_for_workout(exercises);
 
     let (rect, _response) = ui.allocate_exact_size(size, egui::Sense::hover());
