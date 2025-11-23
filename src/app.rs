@@ -11,7 +11,7 @@ pub struct AppRuntime<'a> {
 
 impl AppRuntime<'_> {
     pub fn new(ctx: &Context) -> Self {
-                let mut style = (*ctx.style()).clone();
+        let mut style = (*ctx.style()).clone();
 
         style.text_styles.insert(
             TextStyle::Name("SuperHeading".into()),

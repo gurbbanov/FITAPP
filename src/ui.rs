@@ -524,6 +524,14 @@ impl Gui<'_> {
                             };
                         });
 
+                        if self.states.templates_window {
+                            self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                        }
+
+                        if self.states.exercises_window {
+                            self.draw_exercises_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
+                        }
+
                         if self.states.alert_modal {
                             self.draw_alert_window(ui, ctx, is_dark, "are sure to remove workout?", "remove");
                         }
@@ -558,10 +566,6 @@ impl Gui<'_> {
                                                     self.states.editable = true;
                                                     self.states.templates_window = !self.states.templates_window;
                                                 }
-
-                                                if self.states.templates_window {
-                                                    self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
-                                                }
                                             });
                                         });
 
@@ -583,16 +587,11 @@ impl Gui<'_> {
                                                 ).clicked() {
                                                     self.states.exercises_window = !self.states.exercises_window;
                                                 }
-
-                                                if self.states.exercises_window {
-                                                    self.draw_exercises_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
-                                                }
                                             });
                                         });
                                     });
                             });
                         });
-
 
                         let screen_rect = ctx.screen_rect();
                         let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("ambient layout")));
@@ -2255,6 +2254,7 @@ impl Gui<'_> {
             .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
             .collapsible(false)
             .resizable(false)
+            .interactable(false)
             .open(open)
             .fixed_size(window_size)
             .show(ctx, |ui| {
@@ -2404,16 +2404,19 @@ impl Gui<'_> {
                                                         ui.add_space(REMAINDER);
                                                     }
                                                 }
-                                                ui.add(
-                                                    Button::image_and_text(self.medias.plus.clone(), 
-                                                        RichText::new("add exercise")
-                                                            .size(16.0)
-                                                            .color(text_color),
-                                                    )
-                                                    .fill(other_elements_color)
-                                                    .min_size(vec2(350.0, 42.0))
-                                                    .rounding(8),
+                                            if ui.add(
+                                                Button::image_and_text(self.medias.plus.clone(), 
+                                                    RichText::new("add exercise")
+                                                        .size(16.0)
+                                                        .color(text_color),
                                                 )
+                                                .fill(other_elements_color)
+                                                .min_size(vec2(350.0, 42.0))
+                                                .rounding(8),
+                                            ).clicked() {
+                                                self.states.exercises_window = true;
+                                                println!("{:?}", self.states.exercises_window);
+                                            }
                                                 // ui.vertical_centered(|ui| {
                                                 //     ui.set_height(42.0);
                                                 //     ui.set_width(350.0);
@@ -2424,7 +2427,7 @@ impl Gui<'_> {
 
                                                 //     ui.allocate_ui_at_rect(rect, |ui| {
                                                 //         ui.add
-                                            });
+                                        });
                                     });
                                 });
                         };
@@ -2468,6 +2471,7 @@ impl Gui<'_> {
             .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
             .collapsible(false)
             .resizable(false)
+            .interactable(false)
             .open(open)
             .fixed_size(window_size)
             .show(ctx, |ui| {
@@ -2485,6 +2489,10 @@ impl Gui<'_> {
                                 .min_size(button_size)
                                 .rounding(8),
                             ).clicked() {
+                                if self.states.templates_window {
+                                    self.datas.all_workout_data.workout_templates.get_mut(&self.states.current_template).unwrap().exercises.push(exercise);
+                                    self.states.exercises_window = false;
+                                }
                             };
                             ui.add_space(10.0);
                         }
