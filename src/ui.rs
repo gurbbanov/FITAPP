@@ -2129,7 +2129,6 @@ impl Gui<'_> {
                                 self.states.selected_day = date;
                                 self.datas.macro_data.summarize(Some(self.states.selected_day));
                                 self.datas.water_data.summarize(Some(self.states.selected_day));
-                                // println!("selected: {:?}", self.states.selected_day);
                             }
                         });
                     }
@@ -2302,135 +2301,325 @@ impl Gui<'_> {
                             self.states.show_templates = !self.states.show_templates;
                         };
                     } else if self.states.create_template {
-                        ui.horizontal(|ui| {
-                            if ui.add_sized(
-                                vec2(70.0, 30.0), 
-                                Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
-                            ).clicked() {
-                                self.states.create_template = !self.states.create_template;
-                                self.states.show_templates = !self.states.show_templates;
-                            }
-                        });
-                    } else {
-                        ui.horizontal(|ui| {
-                            if ui.add_sized(
-                                vec2(70.0, 30.0), 
-                                Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
-                            ).clicked() {
-                                self.states.current_template.clear();
-                                self.states.show_templates = !self.states.show_templates;
-                            }
+                        // ui.vertical_centered(|ui| {
+                        // ui.set_width(400.0);
+                        //     if ui.add_sized(
+                        //         vec2(70.0, 30.0), 
+                        //         Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                        //     ).clicked() {
+                        //         self.states.create_template = !self.states.create_template;
+                        //         self.states.show_templates = !self.states.show_templates;
+                        //     }
 
-                            ui.add_space(90.0);
+                        //     ui.add_space(60.0);
 
-                            if !self.states.current_template.is_empty() {
-                                ui.add(Label::new(RichText::new(format!("{}", self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().workout_name)).color(text_color).size(23.0)));
-                            }
-                        });
+                        //     ui.add_sized(vec2(130.0, 30.0), TextEdit::singleline(&mut self.states.new_template_name)
+                        //                     .font(egui::FontId::new(18.0, egui::FontFamily::Proportional)));
 
-                        if !self.states.current_template.is_empty() {
-                            StripBuilder::new(ui)
-                                .size(Size::exact(150.0))
-                                .size(Size::remainder())
-                                .vertical(|mut strip| {
-                                    strip.cell(|ui| {
-                                        StripBuilder::new(ui)
-                                            .size(Size::relative(0.5))
-                                            .size(Size::relative(0.5))
-                                            .horizontal(|mut strip| {
-                                                strip.cell(|ui| {
-                                                    ui.vertical_centered(|ui| {
-                                                        workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().exercises);
-                                                    });
-                                                });
-
-                                                strip.cell(|ui| {
-                                                    ui.vertical_centered(|ui| {
-                                                        workout_tracker_widget_behind(ctx, ui, Vec2::new(100.0, 226.0), &self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().exercises);
-                                                    });
-                                                });
+                        //     if ui.add_sized(
+                        //         vec2(70.0, 30.0), 
+                        //         Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                        //     ).clicked() {
+                        // });
+                        StripBuilder::new(ui)
+                            .size(Size::relative(0.1))
+                            .size(Size::remainder())
+                            .vertical(|mut strip| {
+                                strip.cell(|ui| {
+                                    StripBuilder::new(ui)
+                                        .size(Size::relative(0.2))
+                                        .size(Size::relative(0.6))
+                                        .size(Size::relative(0.2))
+                                        .horizontal(|mut strip| {
+                                            strip.cell(|ui| {
+                                                if ui.add_sized(
+                                                    vec2(70.0, 30.0), 
+                                                    Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                                                ).clicked() {
+                                                    self.states.create_template = !self.states.create_template;
+                                                    self.states.show_templates = !self.states.show_templates;
+                                                }
                                             });
-                                    });
 
-                                    strip.cell(|ui| {
-                                        ScrollArea::vertical()
-                                            .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
-                                            .show(ui, |ui| {
-                                                if let Some(template) = self.datas.all_workout_data.workout_templates.get_mut(&self.states.current_template) {
-                                                    for (index, exercise) in template.exercises.clone().iter().enumerate() {
-                                                        ui.vertical_centered(|ui| {
-                                                            ui.set_height(42.0);
-                                                            ui.set_width(350.0);
+                                            strip.cell(|ui| {
+                                                ui.add_sized(vec2(130.0, 30.0), TextEdit::singleline(&mut self.states.new_template_name)
+                                                                .font(egui::FontId::new(18.0, egui::FontFamily::Proportional)));
+                                            });
 
-                                                            let rect = ui.available_rect_before_wrap();
+                                            strip.cell(|ui| {
+                                                if ui.add_sized(
+                                                    vec2(70.0, 30.0), 
+                                                    Button::image_and_text(self.medias.plus.clone(), "create").rounding(8)
+                                                ).clicked() {
+                                                    self.datas.all_workout_data.create_workout_template(self.states.new_template_name.clone(), self.states.new_template_exercises.clone());
+                                                };
+                                            });
+                                        });
+                                });
 
-                                                            ui.painter().rect_filled(rect, 8, other_elements_color);
+                                strip.cell(|ui| {
+                                    StripBuilder::new(ui)
+                                        .size(Size::exact(150.0))
+                                        .size(Size::remainder())
+                                        .vertical(|mut strip| {
+                                            strip.cell(|ui| {
+                                                StripBuilder::new(ui)
+                                                    .size(Size::relative(0.5))
+                                                    .size(Size::relative(0.5))
+                                                    .horizontal(|mut strip| {
+                                                        strip.cell(|ui| {
+                                                            ui.vertical_centered(|ui| {
+                                                                workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &self.states.new_template_exercises);
+                                                            });
+                                                        });
 
-                                                            ui.allocate_ui_at_rect(rect, |ui| {
-                                                                // ui.add_space(10.0);
-                                                                ui.horizontal(|ui| {
-                                                                    StripBuilder::new(ui)
-                                                                        .size(Size::relative(0.05))
-                                                                        .size(Size::relative(0.3))
-                                                                        .size(Size::relative(0.3))
-                                                                        .size(Size::remainder())
-                                                                        .horizontal(|mut strip| {
-                                                                            strip.empty();
+                                                        strip.cell(|ui| {
+                                                            ui.vertical_centered(|ui| {
+                                                                workout_tracker_widget_behind(ctx, ui, Vec2::new(100.0, 226.0), &self.states.new_template_exercises);
+                                                            });
+                                                        });
+                                                    });
+                                            });
 
-                                                                            strip.cell(|ui| {
-                                                                                ui.vertical(|ui| {
-                                                                                    ui.add_space(10.0);
-                                                                                    ui.add(Label::new(RichText::new(exercise.to_string()).size(15.0).color(text_color)));
-                                                                                });
-                                                                            });
+                                            strip.cell(|ui| {
+                                                ScrollArea::vertical()
+                                                    .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                                                    .show(ui, |ui| {
+                                                        if !self.states.new_template_exercises.is_empty() {
+                                                            for (index, exercise) in self.states.new_template_exercises.clone().iter().enumerate() {
+                                                                ui.vertical_centered(|ui| {
+                                                                    ui.set_height(42.0);
+                                                                    ui.set_width(350.0);
 
-                                                                            strip.empty();
+                                                                    let rect = ui.available_rect_before_wrap();
 
-                                                                            strip.cell(|ui| {
-                                                                                ui.vertical_centered(|ui| {
-                                                                                    ui.add_space(2.5);
-                                                                                    if ui.add_sized(
-                                                                                        vec2(35.0, 35.0), 
-                                                                                        ImageButton::new(Image::new(self.medias.remove.clone())).frame(false)
-                                                                                    ).clicked() {
-                                                                                        template.exercises.remove(index);
-                                                                                    };
+                                                                    ui.painter().rect_filled(rect, 8, other_elements_color);
+
+                                                                    ui.allocate_ui_at_rect(rect, |ui| {
+                                                                        // ui.add_space(10.0);
+                                                                        ui.horizontal(|ui| {
+                                                                            StripBuilder::new(ui)
+                                                                                .size(Size::relative(0.05))
+                                                                                .size(Size::relative(0.3))
+                                                                                .size(Size::relative(0.3))
+                                                                                .size(Size::remainder())
+                                                                                .horizontal(|mut strip| {
+                                                                                    strip.empty();
+
+                                                                                    strip.cell(|ui| {
+                                                                                        ui.vertical(|ui| {
+                                                                                            ui.add_space(10.0);
+                                                                                            ui.add(Label::new(RichText::new(exercise.to_string()).size(15.0).color(text_color)));
+                                                                                        });
+                                                                                    });
+
+                                                                                    strip.empty();
+
+                                                                                    strip.cell(|ui| {
+                                                                                        ui.vertical_centered(|ui| {
+                                                                                            ui.add_space(2.5);
+                                                                                            if ui.add_sized(
+                                                                                                vec2(35.0, 35.0), 
+                                                                                                ImageButton::new(Image::new(self.medias.remove.clone())).frame(false)
+                                                                                            ).clicked() {
+                                                                                                self.states.new_template_exercises.remove(index);
+                                                                                            };
+                                                                                        });
+                                                                                    });
                                                                                 });
                                                                             });
                                                                         });
                                                                     });
+                                                                ui.add_space(REMAINDER);
+                                                            }
+                                                        }
+                                                    if ui.add(
+                                                        Button::image_and_text(self.medias.plus.clone(), 
+                                                            RichText::new("add exercise")
+                                                                .size(16.0)
+                                                                .color(text_color),
+                                                        )
+                                                        .fill(other_elements_color)
+                                                        .min_size(vec2(350.0, 42.0))
+                                                        .rounding(8),
+                                                    ).clicked() {
+                                                        self.states.exercises_window = true;
+                                                        println!("{:?}", self.states.exercises_window);
+                                                    }
+                                                        // ui.vertical_centered(|ui| {
+                                                        //     ui.set_height(42.0);
+                                                        //     ui.set_width(350.0);
+
+                                                        //     let rect = ui.available_rect_before_wrap();
+
+                                                        //     ui.painter().rect_filled(rect, 8, other_elements_color);
+
+                                                        //     ui.allocate_ui_at_rect(rect, |ui| {
+                                                        //         ui.add
+                                                });
+                                            });
+                                });
+                            });
+                        });
+                    } else {
+                        // ui.horizontal(|ui| {
+                        //     if ui.add_sized(
+                        //         vec2(70.0, 30.0), 
+                        //         Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                        //     ).clicked() {
+                        //         self.states.current_template.clear();
+                        //         self.states.show_templates = !self.states.show_templates;
+                        //     }
+
+                        //     ui.add_space(90.0);
+
+                        //     if !self.states.current_template.is_empty() {
+                        //         ui.add(Label::new(RichText::new(format!("{}", self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().workout_name)).color(text_color).size(23.0)));
+                        //     }
+                        // });
+                        StripBuilder::new(ui)
+                            .size(Size::relative(0.1))
+                            .size(Size::remainder())
+                            .vertical(|mut strip| {
+
+                                strip.cell(|ui| {
+                                    StripBuilder::new(ui)
+                                        .size(Size::relative(0.1))
+                                        .size(Size::remainder())
+                                        .vertical(|mut strip| {
+                                            strip.cell(|ui| {
+                                                StripBuilder::new(ui)
+                                                    .size(Size::relative(0.2))
+                                                    .size(Size::relative(0.6))
+                                                    .size(Size::relative(0.2))
+                                                    .horizontal(|mut strip| {
+                                                        strip.cell(|ui| {
+                                                            if ui.add_sized(
+                                                                vec2(70.0, 30.0), 
+                                                                Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
+                                                            ).clicked() {
+                                                                self.states.current_template.clear();
+                                                                self.states.show_templates = !self.states.show_templates;
+                                                            }
+                                                        });
+
+                                                        strip.cell(|ui| {
+                                                            if !self.states.current_template.is_empty() {
+                                                                ui.add(Label::new(RichText::new(format!("{}", self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().workout_name)).color(text_color).size(23.0)));
+                                                            }
+                                                        });
+
+                                                        strip.empty();
+                                                    });
+                                            });
+                                        });
+                                });
+
+                                strip.cell(|ui| {
+                                    if !self.states.current_template.is_empty() {
+                                        StripBuilder::new(ui)
+                                            .size(Size::exact(150.0))
+                                            .size(Size::remainder())
+                                            .vertical(|mut strip| {
+                                                strip.cell(|ui| {
+                                                    StripBuilder::new(ui)
+                                                        .size(Size::relative(0.5))
+                                                        .size(Size::relative(0.5))
+                                                        .horizontal(|mut strip| {
+                                                            strip.cell(|ui| {
+                                                                ui.vertical_centered(|ui| {
+                                                                    workout_tracker_widget_front(ctx, ui, Vec2::new(100.0, 226.0), &self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().exercises);
                                                                 });
                                                             });
-                                                        ui.add_space(REMAINDER);
-                                                    }
-                                                }
-                                            if ui.add(
-                                                Button::image_and_text(self.medias.plus.clone(), 
-                                                    RichText::new("add exercise")
-                                                        .size(16.0)
-                                                        .color(text_color),
-                                                )
-                                                .fill(other_elements_color)
-                                                .min_size(vec2(350.0, 42.0))
-                                                .rounding(8),
-                                            ).clicked() {
-                                                self.states.exercises_window = true;
-                                                println!("{:?}", self.states.exercises_window);
-                                            }
-                                                // ui.vertical_centered(|ui| {
-                                                //     ui.set_height(42.0);
-                                                //     ui.set_width(350.0);
 
-                                                //     let rect = ui.available_rect_before_wrap();
+                                                            strip.cell(|ui| {
+                                                                ui.vertical_centered(|ui| {
+                                                                    workout_tracker_widget_behind(ctx, ui, Vec2::new(100.0, 226.0), &self.datas.all_workout_data.workout_templates.get(&self.states.current_template).unwrap().exercises);
+                                                                });
+                                                            });
+                                                        });
+                                                });
 
-                                                //     ui.painter().rect_filled(rect, 8, other_elements_color);
+                                                strip.cell(|ui| {
+                                                    ScrollArea::vertical()
+                                                        .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                                                        .show(ui, |ui| {
+                                                            if let Some(template) = self.datas.all_workout_data.workout_templates.get_mut(&self.states.current_template) {
+                                                                for (index, exercise) in template.exercises.clone().iter().enumerate() {
+                                                                    ui.vertical_centered(|ui| {
+                                                                        ui.set_height(42.0);
+                                                                        ui.set_width(350.0);
 
-                                                //     ui.allocate_ui_at_rect(rect, |ui| {
-                                                //         ui.add
-                                        });
-                                    });
+                                                                        let rect = ui.available_rect_before_wrap();
+
+                                                                        ui.painter().rect_filled(rect, 8, other_elements_color);
+
+                                                                        ui.allocate_ui_at_rect(rect, |ui| {
+                                                                            // ui.add_space(10.0);
+                                                                            ui.horizontal(|ui| {
+                                                                                StripBuilder::new(ui)
+                                                                                    .size(Size::relative(0.05))
+                                                                                    .size(Size::relative(0.3))
+                                                                                    .size(Size::relative(0.3))
+                                                                                    .size(Size::remainder())
+                                                                                    .horizontal(|mut strip| {
+                                                                                        strip.empty();
+
+                                                                                        strip.cell(|ui| {
+                                                                                            ui.vertical(|ui| {
+                                                                                                ui.add_space(10.0);
+                                                                                                ui.add(Label::new(RichText::new(exercise.to_string()).size(15.0).color(text_color)));
+                                                                                            });
+                                                                                        });
+
+                                                                                        strip.empty();
+
+                                                                                        strip.cell(|ui| {
+                                                                                            ui.vertical_centered(|ui| {
+                                                                                                ui.add_space(2.5);
+                                                                                                if ui.add_sized(
+                                                                                                    vec2(35.0, 35.0), 
+                                                                                                    ImageButton::new(Image::new(self.medias.remove.clone())).frame(false)
+                                                                                                ).clicked() {
+                                                                                                    template.exercises.remove(index);
+                                                                                                };
+                                                                                            });
+                                                                                        });
+                                                                                    });
+                                                                                });
+                                                                            });
+                                                                        });
+                                                                    ui.add_space(REMAINDER);
+                                                                }
+                                                            }
+                                                        if ui.add(
+                                                            Button::image_and_text(self.medias.plus.clone(), 
+                                                                RichText::new("add exercise")
+                                                                    .size(16.0)
+                                                                    .color(text_color),
+                                                            )
+                                                            .fill(other_elements_color)
+                                                            .min_size(vec2(350.0, 42.0))
+                                                            .rounding(8),
+                                                        ).clicked() {
+                                                            self.states.exercises_window = true;
+                                                        }
+                                                            // ui.vertical_centered(|ui| {
+                                                            //     ui.set_height(42.0);
+                                                            //     ui.set_width(350.0);
+
+                                                            //     let rect = ui.available_rect_before_wrap();
+
+                                                            //     ui.painter().rect_filled(rect, 8, other_elements_color);
+
+                                                            //     ui.allocate_ui_at_rect(rect, |ui| {
+                                                            //         ui.add
+                                                    });
+                                                });
+                                            });
+                                    };
                                 });
-                        };
+                            });
                     }
                 // return false;
             });
@@ -2490,7 +2679,11 @@ impl Gui<'_> {
                                 .rounding(8),
                             ).clicked() {
                                 if self.states.templates_window {
-                                    self.datas.all_workout_data.workout_templates.get_mut(&self.states.current_template).unwrap().exercises.push(exercise);
+                                    if self.states.create_template {
+                                        self.states.new_template_exercises.push(exercise);
+                                    } else {
+                                        self.datas.all_workout_data.workout_templates.get_mut(&self.states.current_template).unwrap().exercises.push(exercise);
+                                    }
                                     self.states.exercises_window = false;
                                 }
                             };

@@ -677,6 +677,8 @@ pub struct States {
     pub current_template: String,
     pub editable: bool,
     pub exercises_window: bool,
+    pub new_template_name: String,
+    pub new_template_exercises: Vec<Exercises>,
     // pub scroll_offset: f32,
     // pub velocity: f32,
     // pub dragging: bool,
@@ -714,6 +716,9 @@ impl States {
             current_template: String::new(),
             editable: false,
             exercises_window: false,
+            new_template_name: String::from("workout name"),
+            new_template_exercises: Vec::new(),
+
             // scroll_offset: 0.0,
             // velocity: 0.0,
             // dragging: false,
