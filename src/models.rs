@@ -677,6 +677,9 @@ pub struct States {
     pub current_template: String,
     pub editable: bool,
     pub exercises_window: bool,
+    pub show_exercises: bool,
+    pub create_exercise: bool,
+    pub current_exercise: Exercises,
     pub new_template_name: String,
     pub new_template_exercises: Vec<Exercises>,
     // pub scroll_offset: f32,
@@ -716,8 +719,12 @@ impl States {
             current_template: String::new(),
             editable: false,
             exercises_window: false,
+            show_exercises: true,
+            create_exercise: false,
+            current_exercise: Exercises::default(),
             new_template_name: String::from("workout name"),
             new_template_exercises: Vec::new(),
+
 
             // scroll_offset: 0.0,
             // velocity: 0.0,
@@ -748,6 +755,14 @@ impl States {
         self.current_template = String::new();
         self.editable = false;
     }
+
+    pub fn reset_new_template_window(&mut self) {
+        self.show_templates = true;
+        self.create_template = false;
+        self.new_template_name = String::from("workout name");
+        self.new_template_exercises = vec![];
+    }
+
 }
 
 pub trait Summary {
