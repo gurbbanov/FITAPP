@@ -1,0 +1,90 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        
+    - name: build for Windows
+      run: cargo build --release
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows-bin
+        path: target/release/*.exe*
+        
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        
+    - name: build for Linux
+      run: cargo build --release
+
+    - name: rename file
+      run: mv ./target/release/FITAPP ./target/release/FITAPP_linux
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: linux-bin
+        path: target/release/FITAPP_linux
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: build for macOS
+      run: cargo build --release
+
+    - name: rename file
+      run: mv ./target/release/FITAPP ./target/release/FITAPP_mac
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: macos-bin
+        path: target/release/FITAPP_mac
+
+  create-release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: download artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: create release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: |
+          linux-bin/*
+          windows-bin/*
+          macos-bin/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
