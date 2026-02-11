@@ -44,12 +44,12 @@ impl Gui<'_> {
         let water_tracker_width = (circle_size * water_cols as f32) + (spacing * (water_cols as f32 - 1.0));
 
         StripBuilder::new(ui)
-            .size(Size::exact(150.0)) 
-            .size(Size::exact(40.0)) 
-            .size(Size::exact(30.0)) 
-            .size(Size::exact(170.0)) 
-            .size(Size::exact(150.0)) 
-            .size(Size::remainder()) 
+            .size(Size::exact(150.0))
+            .size(Size::exact(40.0))
+            .size(Size::exact(30.0))
+            .size(Size::exact(170.0))
+            .size(Size::exact(150.0))
+            .size(Size::remainder())
             .vertical(|mut strip| {
                 strip.cell(|ui| {
                     StripBuilder::new(ui)
@@ -370,7 +370,7 @@ impl Gui<'_> {
 
                                         let [r, g, b, _] = elements_color.to_array();
                                         let brightness = 0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32;
-        
+
                                         let color = {
                                             if brightness < 128.0 {
                                                 Color32::from_rgb(
@@ -402,7 +402,7 @@ impl Gui<'_> {
 
                                                     if (ui.add(
                                                         Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
-                                                            .fill(Color32::from_rgb(0, 75, 141)) 
+                                                            .fill(Color32::from_rgb(0, 75, 141))
                                                             .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                             .rounding(10),
                                                     )).clicked() {
@@ -420,7 +420,7 @@ impl Gui<'_> {
                             } else {
                                 if response.dragged() {
                                     let delta = response.drag_delta();
-                                    pos.y += delta.y; 
+                                    pos.y += delta.y;
 
                                     ctx.data_mut(|data| {
                                         data.insert_temp(id, pos);
@@ -430,7 +430,7 @@ impl Gui<'_> {
                                     let target_y = ctx.screen_rect().center().y - side_height / 1.85;
 
                                     let dt = ctx.input(|i| i.stable_dt);
-                                    let speed = 600.0; 
+                                    let speed = 600.0;
 
                                     let dy = target_y - pos.y;
                                     let step = speed * dt;
@@ -438,18 +438,18 @@ impl Gui<'_> {
                                     if dy.abs() > 0.5 {
                                         if dy.abs() > step {
                                             pos.y += step * dy.signum();
-                                            ctx.request_repaint(); 
+                                            ctx.request_repaint();
                                         } else {
                                             pos.y = target_y;
                                         }
                                     }
-                                    
+
                                     ctx.data_mut(|data| {
                                         data.insert_temp(id, pos);
                                     });
                                 }
                                 ui.painter().rect_filled(
-                                    Rect::from_min_size(pos, vec2(ui.available_width() - 100.0, 600.0)), 
+                                    Rect::from_min_size(pos, vec2(ui.available_width() - 100.0, 600.0)),
                                     egui::epaint::Rounding {
                                         nw: 24,
                                         ne: 24,
@@ -471,22 +471,22 @@ impl Gui<'_> {
 
                                         ui.horizontal(|ui| {
                                             ui.add_space(side_rect.width() / 13.0);
-                                        
+
                                             if ui.add(
                                                 Button::new(RichText::new("rest").size(22.0).color(Color32::WHITE))
-                                                    .fill(Color32::from_rgb(91, 0, 113)) 
+                                                    .fill(Color32::from_rgb(91, 0, 113))
                                                     .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                     .rounding(10),
                                             ).clicked() {
                                                 self.datas.planned_workout_data.rest(self.states.selected_day);
                                             };
-                                        
+
                                             let padding = side_rect.width() - (((side_rect.width() / 13.0) * 2.0) + ((side_rect.width() / 2.5) * 2.0)) - 8.0;
                                             ui.add_space(padding);
-                                        
+
                                             if (ui.add(
                                                 Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
-                                                    .fill(Color32::from_rgb(0, 75, 141)) 
+                                                    .fill(Color32::from_rgb(0, 75, 141))
                                                     .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                     .rounding(10),
                                             )).clicked() {
@@ -508,7 +508,7 @@ impl Gui<'_> {
 
                                             if (ui.add(
                                                 Button::new(RichText::new("change workout").size(22.0).color(Color32::WHITE))
-                                                    .fill(Color32::from_rgb(0, 75, 141)) 
+                                                    .fill(Color32::from_rgb(0, 75, 141))
                                                     .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
                                                     .rounding(10),
                                             )).clicked() {
@@ -533,7 +533,7 @@ impl Gui<'_> {
                         }
 
                         if self.states.alert_modal {
-                            self.draw_alert_window(ui, ctx, is_dark, "are sure to remove workout?", "remove");
+                            self.draw_alert_window(ui, ctx, is_dark, "are you sure to remove workout?", "remove");
                         }
 
                         let top_rect = Rect::from_min_size(
@@ -825,7 +825,7 @@ impl Gui<'_> {
                                             ui.add(Label::new(RichText::new("HISTORY").size(25.0).strong()).selectable(false));
                                         });
                                     });
-                                    
+
                                     strip.empty();
 
                                     strip.cell(|ui| {
@@ -864,9 +864,9 @@ impl Gui<'_> {
                                                                         ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%b %e"), eat.date.format("%T"))).size(10.0)));
                                                                     });
                                                                     ui.add_space(140.0);
-                                                                    
-                                                                    if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
-                                                                        .fill(Color32::from_rgb(140, 0, 0)) 
+
+                                                                    if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE))
+                                                                        .fill(Color32::from_rgb(140, 0, 0))
                                                                         .min_size(Vec2::new(65.0, 25.0))
                                                                         .rounding(9)).clicked() {
                                                                             self.states.alert_modal = !self.states.alert_modal;
@@ -878,12 +878,12 @@ impl Gui<'_> {
                                                                     }
 
                                                                     ui.add_space(5.0);
-                                                                    
+
                                                                     ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
-                                                                    .fill(Color32::from_rgb(0, 79, 148)) 
+                                                                    .fill(Color32::from_rgb(0, 79, 148))
                                                                     .min_size(Vec2::new(50.0, 25.0))
                                                                     .rounding(9));
-                                                                
+
                                                                     ui.add_space(10.0);
 
                                                                     ui.vertical(|ui| {
@@ -965,7 +965,7 @@ impl Gui<'_> {
                     self.states.strip_size = ui.ctx().animate_value_with_time(
                         ui.id().with("history_height"),
                         target_height,
-                        0.6, 
+                        0.6,
                     );
 
                     Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
@@ -1007,7 +1007,7 @@ impl Gui<'_> {
                                     if ui.add(
                                         Button::new(RichText::new("add macros").size(18.0).strong().color(Color32::WHITE))
                                             //     egui::Color32::from_rgb(91, 0, 113),
-                                            .fill(Color32::from_rgb(21, 141, 0)) 
+                                            .fill(Color32::from_rgb(21, 141, 0))
                                             .min_size(Vec2::new(120.0, 40.0))
                                             .rounding(12),
                                     ).clicked() {
@@ -1069,8 +1069,8 @@ impl Gui<'_> {
                                                                     self.datas.macro_data.add_meal(
                                                                         self.states.selected_day,
                                                                         &self.states.calory_add_value,
-                                                                        &self.states.protein_add_value, 
-                                                                        &self.states.carb_add_value, 
+                                                                        &self.states.protein_add_value,
+                                                                        &self.states.carb_add_value,
                                                                         &self.states.fat_add_value);
 
                                                                     self.datas.macro_data.summarize(Some(self.states.selected_day));
@@ -1094,7 +1094,7 @@ impl Gui<'_> {
                                                 .horizontal(|mut strip| {
                                                     strip.empty();
 
-                                                    strip.cell(|ui| {   
+                                                    strip.cell(|ui| {
                                                         ui.set_width(130.0);
                                                         ui.vertical_centered(|ui| {
                                                             ui.add(Label::new(RichText::new("add proteins:").size(18.0).color(text_color).strong()).selectable(false));
@@ -1102,7 +1102,7 @@ impl Gui<'_> {
 
                                                             let proteins_rect = ui.available_rect_before_wrap();
 
-                                                            ui.painter().rect_filled(proteins_rect, 25.0, other_elements_color); 
+                                                            ui.painter().rect_filled(proteins_rect, 25.0, other_elements_color);
                                                             ui.vertical_centered(|ui| {
                                                                 ui.add_space(5.0);
                                                                 ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
@@ -1262,14 +1262,14 @@ impl Gui<'_> {
                         ui.spacing_mut().item_spacing = vec2(1.0, -3.0);
                         self.water_tracker_bar(ctx, frame, ui, spacing, circle_size, water_rows, water_cols, water_percent);
                     });
-                    
+
                     // ui.add_space(REMAINDER);
-                    
+
                     ui.vertical_centered(|ui| {
                         let rect_length = 150.0;
-                        
+
                         let available_width = ui.available_width();
-                        
+
                         ui.add(Label::new(RichText::new("RECENT DRINKS").size(25.0).strong()).selectable(false));
 
                         let second_rect = Rect::from_min_size(
@@ -1326,7 +1326,7 @@ impl Gui<'_> {
                                                             });
 
                                                             ui.add_space(5.0);
-                                                            
+
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
                                                                 ui.add(Label::new(RichText::new("25 ml").size(15.0).color(text_color)));
@@ -1341,7 +1341,7 @@ impl Gui<'_> {
                                             });
 
                                             strip.cell(|ui| {
-                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE)) 
+                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE))
                                                     // .fill(Color32::GRAY)
                                                     .fill(Color32::from_rgb(96, 96, 96))
                                                     .min_size(ui.available_rect_before_wrap().size())
@@ -1394,7 +1394,7 @@ impl Gui<'_> {
                                                             });
 
                                                             ui.add_space(5.0);
-                                                            
+
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
                                                                 ui.add(Label::new(RichText::new("500 ml").size(15.0).color(text_color)));
@@ -1409,7 +1409,7 @@ impl Gui<'_> {
                                             });
 
                                             strip.cell(|ui| {
-                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE)) 
+                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE))
                                                     // .fill(Color32::GRAY)
                                                     .fill(Color32::from_rgb(96, 96, 96))
                                                     .min_size(ui.available_rect_before_wrap().size())
@@ -1462,7 +1462,7 @@ impl Gui<'_> {
                                                             });
 
                                                             ui.add_space(5.0);
-                                                            
+
                                                             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                                                                 ui.add_sized(vec2(15.0, 15.0), Image::new(self.medias.drop.clone()));
                                                                 ui.add(Label::new(RichText::new("500 ml").size(15.0).color(text_color)));
@@ -1477,7 +1477,7 @@ impl Gui<'_> {
                                             });
 
                                             strip.cell(|ui| {
-                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE)) 
+                                                ui.add(Button::new(RichText::new("add").size(14.0).strong().color(Color32::WHITE))
                                                     // .fill(Color32::GRAY)
                                                     .fill(Color32::from_rgb(96, 96, 96))
                                                     .min_size(ui.available_rect_before_wrap().size())
@@ -1508,7 +1508,7 @@ impl Gui<'_> {
                                         ui.add(Label::new(RichText::new("HISTORY").size(25.0).strong()).selectable(false));
                                     });
                                 });
-                                    
+
                                 strip.empty();
 
                                 strip.cell(|ui| {
@@ -1544,9 +1544,9 @@ impl Gui<'_> {
                                                                     ui.add(Label::new(RichText::new(format!("{} {}", self.states.selected_day.format("%b %e"), drink.date.format("%T"))).size(10.0)));
                                                                 });
                                                                 ui.add_space(140.0);
-                                                                
-                                                                if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE)) 
-                                                                    .fill(Color32::from_rgb(140, 0, 0)) 
+
+                                                                if ui.add(Button::new(RichText::new("delete").size(14.0).strong().color(Color32::WHITE))
+                                                                    .fill(Color32::from_rgb(140, 0, 0))
                                                                     .min_size(Vec2::new(65.0, 25.0))
                                                                     .rounding(9)).clicked() {
                                                                         self.states.alert_modal = !self.states.alert_modal;
@@ -1558,12 +1558,12 @@ impl Gui<'_> {
                                                                 }
 
                                                                 ui.add_space(5.0);
-                                                                
+
                                                                 ui.add(Button::new(RichText::new("edit").size(14.0).strong().color(Color32::WHITE))
-                                                                .fill(Color32::from_rgb(0, 79, 148)) 
+                                                                .fill(Color32::from_rgb(0, 79, 148))
                                                                 .min_size(Vec2::new(50.0, 25.0))
                                                                 .rounding(9));
-                                                            
+
                                                                 ui.add_space(10.0);
 
                                                                 ui.vertical(|ui| {
@@ -1621,7 +1621,7 @@ impl Gui<'_> {
                     self.states.strip_size = ui.ctx().animate_value_with_time(
                         ui.id().with("history_height"),
                         target_height,
-                        0.6, 
+                        0.6,
                     );
 
                     Self::draw_rect_with_black_shadow(ui.painter(), bot_rect, 110, elements_color, 0.0, -4.0, [(2.0, 20), (3.0, 25), (5.0, 30)], Rounding {
@@ -1663,7 +1663,7 @@ impl Gui<'_> {
                                     if ui.add(
                                         Button::new(RichText::new("add water").size(18.0).strong().color(Color32::WHITE))
                                             //     egui::Color32::from_rgb(91, 0, 113),
-                                            // .fill(Color32::from_rgb(21, 141, 0)) 
+                                            // .fill(Color32::from_rgb(21, 141, 0))
                                             .fill(Color32::from_rgb(0, 75, 142))
                                             .min_size(Vec2::new(120.0, 40.0))
                                             .rounding(12),
@@ -1778,7 +1778,7 @@ impl Gui<'_> {
 
     pub fn statistics_ui(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui) {
     }
-            
+
     pub fn navigation_bar(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui) {
         let is_dark = ctx.style().visuals.dark_mode;
         let mut elements_color;
@@ -1812,7 +1812,7 @@ impl Gui<'_> {
             } else if self.datas.macro_data.calory_goal > self.datas.macro_data.calory_registered{
                 (((rows * cols) as f32 / 100.0) * calory_percent as f32).round() as u32
             } else {
-               rows * cols 
+               rows * cols
             }
         };
 
@@ -1832,7 +1832,7 @@ impl Gui<'_> {
                         } else {
                             Color32::GRAY
                         };
-                        
+
                         ui.painter().rect_filled(rect, 1.0, color);
 
                         if col < cols - 1 {
@@ -1866,18 +1866,18 @@ impl Gui<'_> {
                             vec2(circle_size, circle_size),
                             egui::Sense::hover(),
                         );
-        
+
                         let color = if done_marks > 0 {
                             done_marks -= 1;
-                            Color32::from_rgb(0, 136, 255) 
+                            Color32::from_rgb(0, 136, 255)
                         } else {
                             Color32::GRAY
                         };
-        
+
                         let center = rect.center();
-                        let radius = circle_size / 2.0; 
+                        let radius = circle_size / 2.0;
                         ui.painter().circle_filled(center, radius, color);
-        
+
                         if col < cols - 1 {
                             ui.add_space(spacing);
                         }
@@ -1889,14 +1889,14 @@ impl Gui<'_> {
     }
 
     fn mini_tracker_bar(&mut self, ctx: &Context, frame: &mut Frame, ui: &mut Ui, spacing: f32, rect_size:f32, cols: i32, registered: u32, goal: u32) {
-        ui.spacing_mut().item_spacing = vec2(1.0, -3.0); 
+        ui.spacing_mut().item_spacing = vec2(1.0, -3.0);
 
         let ROWS = 5;
         let COLUMNS = 5;
 
         let calory_percent = ((registered as f32 / goal as f32) * 100.0) as u32;
 
-        let mut remaining = if registered == 0 {0} 
+        let mut remaining = if registered == 0 {0}
         else if goal > registered {
             (((ROWS * COLUMNS) as f32 / 100.0) * calory_percent as f32).round() as u32
         } else {
@@ -1938,29 +1938,29 @@ impl Gui<'_> {
             //         ui.add(Label::new(RichText::new("not planned").size(24.0)).selectable(false));
             //         ui.add_space(200.0);
             //     });
-                    
+
             //     ui.horizontal(|ui| {
             //         ui.add_space(side_rect.width() / 13.0);
-                
+
             //         ui.add(
             //             Button::new(RichText::new("rest").size(22.0).color(Color32::WHITE))
             //                 //     egui::Color32::from_rgb(91, 0, 113),
-            //                 .fill(Color32::from_rgb(91, 0, 113)) 
+            //                 .fill(Color32::from_rgb(91, 0, 113))
             //                 .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
             //                 .rounding(10),
-            //                 // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), 
+            //                 // .stroke(egui::Stroke::new(1.0, Color32::WHITE)),
             //         );
-                
+
             //         let padding = side_rect.width() - (((side_rect.width() / 13.0) * 2.0) + ((side_rect.width() / 2.5) * 2.0)) - 8.0;
             //         ui.add_space(padding);
-                
+
             //         if (ui.add(
             //             Button::new(RichText::new("add workout").size(22.0).color(Color32::WHITE))
             //                 //     egui::Color32::from_rgb(91, 0, 113),
-            //                 .fill(Color32::from_rgb(0, 75, 141)) 
+            //                 .fill(Color32::from_rgb(0, 75, 141))
             //                 .min_size(Vec2::new(side_rect.width() / 2.5, 40.0))
             //                 .rounding(10),
-            //             // .stroke(egui::Stroke::new(1.0, Color32::WHITE)), 
+            //             // .stroke(egui::Stroke::new(1.0, Color32::WHITE)),
             //         )).clicked() {
             //             println!("{:?}", self.datas.planned_workout_data.add_workout(selected_day, WorkoutPlanned::leg_day(selected_day)));
             //         };
@@ -1974,7 +1974,7 @@ impl Gui<'_> {
                             ui.add_space(30.0);
                             ui.label(RichText::new(&self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[index].template.workout_name).size(27.0).strong());
                             ui.add_space(50.0);
-                        
+
                             ui.horizontal(|ui| {
                                 ui.vertical(|ui| {
                                     ui.set_width(side_rect.width() / 2.0);
@@ -1982,7 +1982,7 @@ impl Gui<'_> {
                                         workout_tracker_widget_front(ctx, ui, Vec2::new(110.0, 249.0), &self.datas.planned_workout_data.workouts.get(&selected_day).unwrap()[index].template.exercises);
                                     });
                                 });
-                        
+
                                 ui.vertical(|ui| {
                                     ui.set_width(side_rect.width() / 2.0);
                                     ui.vertical_centered(|ui| {
@@ -1990,26 +1990,26 @@ impl Gui<'_> {
                                     });
                                 });
                             });
-                        
+
                             ui.add_space(50.0);
-                        
+
                             ui.add(
                                 Button::new(RichText::new("start").size(22.0).strong().color(Color32::WHITE))
-                                    .fill(Color32::from_rgb(21, 141, 0)) 
+                                    .fill(Color32::from_rgb(21, 141, 0))
                                     .min_size(Vec2::new(side_rect.width() / 4.0, 40.0))
                                     .rounding(10),
                             );
-                        
+
                             ui.add_space(12.0);
-                        
+
                             ui.horizontal(|ui| {
                                 let button_width = side_rect.width() / 4.0;
                                 let spacing = 6.0;
                                 let total_width = button_width * 3.0 + spacing * 2.0;
-                        
+
                                 let left_padding = (side_rect.width() - total_width) / 2.1;
                                 ui.add_space(left_padding);
-                        
+
                                 if ui.add(
                                     Button::new(RichText::new("change workout").size(15.0).strong().color(Color32::WHITE))
                                         .fill(Color32::from_rgb(0, 75, 141))
@@ -2021,10 +2021,10 @@ impl Gui<'_> {
 
                                 if self.states.templates_window {
                                     self.draw_templates_window(ui, ctx, is_dark, elements_color, other_elements_color, text_color, &mut true);
-                                } 
-                        
+                                }
+
                                 ui.add_space(spacing);
-                        
+
                                 if ui.add(
                                     Button::new(RichText::new("rest").size(18.0).strong().color(Color32::WHITE))
                                         .fill(Color32::from_rgb(91, 0, 113))
@@ -2033,9 +2033,9 @@ impl Gui<'_> {
                                 ).clicked() {
                                     self.datas.planned_workout_data.rest(self.states.selected_day);
                                 };
-                        
+
                                 ui.add_space(spacing);
-                        
+
                                 if ui.add(
                                     Button::new(RichText::new("remove workout").size(18.0).color(Color32::WHITE))
                                         .fill(Color32::from_rgb(141, 0, 19))
@@ -2141,13 +2141,13 @@ impl Gui<'_> {
                             };
                             ui.add_space(REMAINDER * 4.0);
                         });
-                    } 
+                    }
                 });
             });
         });
 
     }
-                                
+
     pub fn draw_alert_window(&mut self, ui: &mut Ui, ctx: &Context, is_dark: bool, q_label: &str, conf_label: &str) {
         let screen_rect = ctx.screen_rect();
         let painter = ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("dark_backdrop")));
@@ -2189,7 +2189,7 @@ impl Gui<'_> {
                     .horizontal(|mut strip| {
                         strip.cell(|ui| {
                             ui.vertical_centered(|ui| {
-                                if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE)) 
+                                if ui.add(Button::new(RichText::new("cancel").size(14.0).strong().color(Color32::WHITE))
                                     // .fill(Color32::GRAY)
                                     .fill(Color32::from_rgb(96, 96, 96))
                                     .min_size(ui.available_rect_before_wrap().size())
@@ -2206,8 +2206,8 @@ impl Gui<'_> {
 
                         strip.cell(|ui| {
                             ui.vertical_centered(|ui| {
-                                if ui.add(Button::new(RichText::new(conf_label).size(14.0).strong().color(Color32::WHITE)) 
-                                    .fill(Color32::from_rgb(140, 0, 0)) 
+                                if ui.add(Button::new(RichText::new(conf_label).size(14.0).strong().color(Color32::WHITE))
+                                    .fill(Color32::from_rgb(140, 0, 0))
                                     // .min_size(Vec2::new(65.0, 25.0))
                                     .min_size(ui.available_rect_before_wrap().size())
                                     .rounding(egui::epaint::Rounding {
@@ -2288,7 +2288,7 @@ impl Gui<'_> {
                             ui.add_space(10.0);
                         }
                         if ui.add(
-                            Button::image_and_text(self.medias.plus.clone(), 
+                            Button::image_and_text(self.medias.plus.clone(),
                                 RichText::new("create template")
                                     .size(18.0)
                                     .color(text_color),
@@ -2304,7 +2304,7 @@ impl Gui<'_> {
                         // ui.vertical_centered(|ui| {
                         // ui.set_width(400.0);
                         //     if ui.add_sized(
-                        //         vec2(70.0, 30.0), 
+                        //         vec2(70.0, 30.0),
                         //         Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                         //     ).clicked() {
                         //         self.states.create_template = !self.states.create_template;
@@ -2317,7 +2317,7 @@ impl Gui<'_> {
                         //                     .font(egui::FontId::new(18.0, egui::FontFamily::Proportional)));
 
                         //     if ui.add_sized(
-                        //         vec2(70.0, 30.0), 
+                        //         vec2(70.0, 30.0),
                         //         Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                         //     ).clicked() {
                         // });
@@ -2333,7 +2333,7 @@ impl Gui<'_> {
                                         .horizontal(|mut strip| {
                                             strip.cell(|ui| {
                                                 if ui.add_sized(
-                                                    vec2(70.0, 30.0), 
+                                                    vec2(70.0, 30.0),
                                                     Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                                                 ).clicked() {
                                                     self.states.create_template = !self.states.create_template;
@@ -2348,7 +2348,7 @@ impl Gui<'_> {
 
                                             strip.cell(|ui| {
                                                 if ui.add_sized(
-                                                    vec2(70.0, 30.0), 
+                                                    vec2(70.0, 30.0),
                                                     Button::image_and_text(self.medias.plus.clone(), "create").rounding(8)
                                                 ).clicked() {
                                                     self.datas.all_workout_data.create_workout_template(self.states.new_template_name.clone(), self.states.new_template_exercises.clone());
@@ -2420,7 +2420,7 @@ impl Gui<'_> {
                                                                                         ui.vertical_centered(|ui| {
                                                                                             ui.add_space(2.5);
                                                                                             if ui.add_sized(
-                                                                                                vec2(35.0, 35.0), 
+                                                                                                vec2(35.0, 35.0),
                                                                                                 ImageButton::new(Image::new(self.medias.remove.clone())).frame(false)
                                                                                             ).clicked() {
                                                                                                 self.states.new_template_exercises.remove(index);
@@ -2435,7 +2435,7 @@ impl Gui<'_> {
                                                             }
                                                         }
                                                     if ui.add(
-                                                        Button::image_and_text(self.medias.plus.clone(), 
+                                                        Button::image_and_text(self.medias.plus.clone(),
                                                             RichText::new("add exercise")
                                                                 .size(16.0)
                                                                 .color(text_color),
@@ -2465,7 +2465,7 @@ impl Gui<'_> {
                     } else {
                         // ui.horizontal(|ui| {
                         //     if ui.add_sized(
-                        //         vec2(70.0, 30.0), 
+                        //         vec2(70.0, 30.0),
                         //         Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                         //     ).clicked() {
                         //         self.states.current_template.clear();
@@ -2490,7 +2490,7 @@ impl Gui<'_> {
                                         .horizontal(|mut strip| {
                                             strip.cell(|ui| {
                                                 if ui.add_sized(
-                                                    vec2(70.0, 30.0), 
+                                                    vec2(70.0, 30.0),
                                                     Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                                                 ).clicked() {
                                                     self.states.current_template.clear();
@@ -2571,7 +2571,7 @@ impl Gui<'_> {
                                                                                             ui.vertical_centered(|ui| {
                                                                                                 ui.add_space(2.5);
                                                                                                 if ui.add_sized(
-                                                                                                    vec2(35.0, 35.0), 
+                                                                                                    vec2(35.0, 35.0),
                                                                                                     ImageButton::new(Image::new(self.medias.remove.clone())).frame(false)
                                                                                                 ).clicked() {
                                                                                                     template.exercises.remove(index);
@@ -2586,7 +2586,7 @@ impl Gui<'_> {
                                                                 }
                                                             }
                                                         if ui.add(
-                                                            Button::image_and_text(self.medias.plus.clone(), 
+                                                            Button::image_and_text(self.medias.plus.clone(),
                                                                 RichText::new("add exercise")
                                                                     .size(16.0)
                                                                     .color(text_color),
@@ -2688,14 +2688,14 @@ impl Gui<'_> {
                                 ui.add_space(10.0);
                             }
                             if ui.add(
-                                Button::image_and_text(self.medias.plus.clone(), 
+                                Button::image_and_text(self.medias.plus.clone(),
                                     RichText::new("create exercise")
                                         .size(18.0)
                                         .color(text_color),
                                 )
                                 .fill(other_elements_color)
                                 .min_size(button_size)
-                                .rounding(8),                    
+                                .rounding(8),
                             ).clicked() {
                                 self.states.show_exercises = !self.states.show_exercises;
                                 self.states.create_exercise = !self.states.create_exercise;
@@ -2715,7 +2715,7 @@ impl Gui<'_> {
                                         .horizontal(|mut strip| {
                                             strip.cell(|ui| {
                                                 if ui.add_sized(
-                                                    vec2(70.0, 30.0), 
+                                                    vec2(70.0, 30.0),
                                                     Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                                                 ).clicked() {
                                                     if self.states.create_exercise {
@@ -2740,7 +2740,7 @@ impl Gui<'_> {
                                             if self.states.create_exercise {
                                                 strip.cell(|ui| {
                                                     if ui.add_sized(
-                                                        vec2(70.0, 30.0), 
+                                                        vec2(70.0, 30.0),
                                                         Button::image_and_text(self.medias.plus.clone(), "create").rounding(8)
                                                     ).clicked() {
                                                         self.states.create_exercise = !self.states.create_exercise;
@@ -2803,7 +2803,7 @@ impl Gui<'_> {
                     //                     .horizontal(|mut strip| {
                     //                         strip.cell(|ui| {
                     //                             if ui.add_sized(
-                    //                                 vec2(70.0, 30.0), 
+                    //                                 vec2(70.0, 30.0),
                     //                                 Button::image_and_text(self.medias.left_arrow.clone(), "back").rounding(8)
                     //                             ).clicked() {
                     //                                 self.states.show_exercises = !self.states.show_exercises;
